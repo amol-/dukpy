@@ -18,26 +18,31 @@ static PyObject *DukPyError;
 
 static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     const char *command;
+    const char *vars;
 
-    if (!PyArg_ParseTuple(args, "s", &command))
+    if (!PyArg_ParseTuple(args, "ss", &command, &vars))
         return NULL;
 
     duk_context *ctx = duk_create_heap_default();
     if (ctx) {
-        int res = duk_peval_string(ctx, command);
+        duk_push_string(ctx, vars);
+        duk_json_decode(ctx, -1);
+        duk_put_global_string(ctx, "dukpy");
 
+        int res = duk_peval_string(ctx, command);
         if (res != 0) {
             PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
             return NULL;
         }
        
-        const char *output = duk_safe_to_string(ctx, -1);
+        const char *output = duk_json_encode(ctx, -1);
         PyObject *result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
 
         duk_pop(ctx);
         duk_destroy_heap(ctx);
         return result;
     }
+
 
     Py_RETURN_NONE;
 }
