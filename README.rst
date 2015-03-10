@@ -2,7 +2,8 @@ dukpy
 =====
 
 DukPy is a simple javascript interpreter for Python built on top of
-duktape engine. It comes with a builtin *CoffeeScript* compiler for
+duktape engine **without any external dependency**.
+It comes with a builtin *CoffeeScript* compiler for
 convenience and usage example.
 
 Dukpy has been tested on **Python 2.7** and **Python 3.4**, dukpy
