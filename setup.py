@@ -3,6 +3,7 @@ from distutils.core import setup, Extension
 
 
 duktape = Extension('dukpy._dukpy',
+                    define_macros=[('DUK_OPT_DEEP_C_STACK', '1')],
                     sources=[os.path.join('duktape', 'duktape.c'), 
                              'pyduktape.c'],
                     include_dirs=[os.path.join('.', 'duktape')])
