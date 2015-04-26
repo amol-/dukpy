@@ -22,6 +22,25 @@ Using the coffeescript compiler is as easy as running::
     ... ''')
     '(function() {\n  var fill;\n\n  fill = function*(container, liquid) {\n    if (liquid == null) {\n      liquid = "coffee";\n    }\n    return "Filling the " + container + " with " + liquid + "...";\n  };\n\n}).call(this);\n'
 
+EcmaScript6 BabelJS Transpiler
+------------------------------
+
+To compile ES6 code to ES5 for everyday usage you can use ``dukpy.babel_compile``::
+
+    >>> import dukpy
+    >>> dukpy.babel_compile('''
+    ... class Point {
+    ...     constructor(x, y) {
+    ...             this.x = x;
+    ...         this.y = y;
+    ...         }
+    ...         toString() {
+    ...             return '(' + this.x + ', ' + this.y + ')';
+    ...         }
+    ... }
+    ... ''')
+    '"use strict";\n\nvar _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };\n\nvar _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };\n\nvar Point = (function () {\n    function Point(x, y) {\n        _classCallCheck(this, Point);\n\n        this.x = x;\n        this.y = y;\n    }\n\n    _prototypeProperties(Point, null, {\n        toString: {\n            value: function toString() {\n                return "(" + this.x + ", " + this.y + ")";\n            },\n            writable: true,\n            configurable: true\n        }\n    });\n\n    return Point;\n})();\n'
+
 Using the JavaScript Interpreter
 --------------------------------
 
