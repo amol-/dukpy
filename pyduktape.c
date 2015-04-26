@@ -16,6 +16,12 @@ extern "C" {
 
 static PyObject *DukPyError;
 
+duk_ret_t stack_json_encode(duk_context *ctx) {
+    const char *output = duk_json_encode(ctx, -1);
+    duk_push_string(ctx, output);
+    return 1;
+}
+
 static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     const char *command;
     const char *vars;
@@ -34,10 +40,15 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
             PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
             return NULL;
         }
-       
-        const char *output = duk_json_encode(ctx, -1);
-        PyObject *result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
+      
+        duk_int_t rc = duk_safe_call(ctx, stack_json_encode, 1, 1);
+        if (rc != DUK_EXEC_SUCCESS) { 
+            PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
+            return NULL;
+        }
 
+        const char *output = duk_get_string(ctx, -1);
+        PyObject *result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
         duk_pop(ctx);
         duk_destroy_heap(ctx);
         return result;
