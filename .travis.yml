@@ -11,7 +11,7 @@ install:
   - "travis_retry pip install coveralls"
   - "travis_retry pip install --pre -e ."
 
-script: "python setup.py nosetests --with-coverage --cover-package=dukpy --cover-erase"
+script: "nosetests -v --with-coverage --cover-package=dukpy --cover-erase"
 
 after_success:
   coveralls
