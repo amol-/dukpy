@@ -1,6 +1,12 @@
 dukpy
 =====
 
+.. image:: https://travis-ci.org/amol-/dukpy.png?branch=master 
+    :target: https://travis-ci.org/amol-/dukpy 
+
+.. image:: https://coveralls.io/repos/amol-/dukpy/badge.png?branch=master
+    :target: https://coveralls.io/r/amol-/dukpy?branch=master 
+
 DukPy is a simple javascript interpreter for Python built on top of
 duktape engine **without any external dependency**.
 It comes with a builtin *CoffeeScript* compiler for
