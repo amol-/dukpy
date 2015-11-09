@@ -51,7 +51,7 @@ The DukPY based BabelJS compiler also provides a WebAssets ( http://webassets.re
 You register this filter as ``babeljs`` within WebAssets using::
 
     from webassets.filter import register_filter
-    from dukpy.webassets.babelfilter import BabelJS
+    from dukpy.webassets import BabelJS
     
     register_filter(BabelJS)
 
