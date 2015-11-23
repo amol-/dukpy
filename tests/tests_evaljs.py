@@ -1,5 +1,7 @@
 import json
 import dukpy
+from diffreport import report_diff
+
 
 class TestEvalJS(object):
     def test_object_return(self):
@@ -45,3 +47,29 @@ class Point {
         assert '''var Point = (function () {
     function Point(x, y) {
 ''' in ans, ans
+
+    def test_typescript(self):
+        ans = dukpy.typescript_compile('''
+class Greeter {
+    constructor(public greeting: string) { }
+    greet() {
+        return "<h1>" + this.greeting + "</h1>";
+    }
+};
+
+var greeter = new Greeter("Hello, world!");
+''')
+
+        expected = """var Greeter = (function () {
+    function Greeter(greeting) {
+        this.greeting = greeting;
+    }
+    Greeter.prototype.greet = function () {
+        return "<h1>" + this.greeting + "</h1>";
+    };
+    return Greeter;
+})();
+;
+var greeter = new Greeter("Hello, world!");"""
+
+        assert expected in ans, report_diff(expected, ans)

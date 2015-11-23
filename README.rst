@@ -9,8 +9,11 @@ dukpy
 
 DukPy is a simple javascript interpreter for Python built on top of
 duktape engine **without any external dependency**.
-It comes with a builtin *CoffeeScript* compiler for
-convenience and usage example.
+It comes with a bunch of common transpilers built-in for convenience:
+
+    - *CoffeeScript*
+    - *BabelJS*
+    - *TypeScript*
 
 Dukpy has been tested on **Python 2.7** and **Python 3.4**, dukpy
 is currently not production ready and might actually crash your
@@ -27,6 +30,27 @@ Using the coffeescript compiler is as easy as running::
     ...         "Filling the #{container} with #{liquid}..."
     ... ''')
     '(function() {\n  var fill;\n\n  fill = function*(container, liquid) {\n    if (liquid == null) {\n      liquid = "coffee";\n    }\n    return "Filling the " + container + " with " + liquid + "...";\n  };\n\n}).call(this);\n'
+
+TypeScript Transpiler
+---------------------
+
+The TypeScript compiler can be used through the ``dukpy.typescript_compile`` function::
+
+    >>> import dukpy
+    >>> dukpy.typescript_compile('''
+    ... class Greeter {
+    ...     constructor(public greeting: string) { }
+    ...     greet() {
+    ...         return "<h1>" + this.greeting + "</h1>";
+    ...     }
+    ... };
+    ...
+    ... var greeter = new Greeter("Hello, world!");
+    ... ''')
+    'var Greeter = (function () {\n    function Greeter(greeting) {\n        this.greeting = greeting;\n    }\n    Greeter.prototype.greet = function () {\n        return "<h1>" + this.greeting + "</h1>";\n    };\n    return Greeter;\n})();\n;\nvar greeter = new Greeter("Hello, world!");\n'
+
+Currently the compiler has built-in options and doesn't accept additional ones,
+
 
 EcmaScript6 BabelJS Transpiler
 ------------------------------
