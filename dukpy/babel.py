@@ -1,7 +1,7 @@
 import os
 from .evaljs import evaljs
 
-BABEL_COMPILER = os.path.join(os.path.dirname(__file__), 'babel-4.6.6.min.js')
+BABEL_COMPILER = os.path.join(os.path.dirname(__file__), 'babel-6.4.4.min.js')
 
 
 def babel_compile(source):
