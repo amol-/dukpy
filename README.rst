@@ -79,8 +79,8 @@ To compile ES6 code to ES5 for everyday usage you can use
     ... ''')
     '"use strict";\n\nvar _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };\n\nvar _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };\n\nvar Point = (function () {\n    function Point(x, y) {\n        _classCallCheck(this, Point);\n\n        this.x = x;\n        this.y = y;\n    }\n\n    _prototypeProperties(Point, null, {\n        toString: {\n            value: function toString() {\n                return "(" + this.x + ", " + this.y + ")";\n            },\n            writable: true,\n            configurable: true\n        }\n    });\n\n    return Point;\n})();\n'
 
-You  can pass `options`__ to the babel compiler just as keywords on
-the call to ``babel_compile()``
+You  can pass `options`__ to the babel transpiler just as keywords on
+the call to ``babel_compile()``.
 
 __ http://babeljs.io/docs/usage/options/
 
