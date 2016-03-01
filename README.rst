@@ -73,21 +73,31 @@ To compile ES6 code to ES5 for everyday usage you can use ``dukpy.babel_compile`
 
 The DukPY based BabelJS compiler also provides a WebAssets ( http://webassets.readthedocs.org/en/latest/ ) filter to automatically compile ES6 code in your assets pipeline.
 You register this filter as ``babeljs`` within WebAssets using::
+You  can pass `options`__ to the babel compiler just as keywords on
+the call to ``babel_compile()``
+
+__ http://babeljs.io/docs/usage/options/
 
     from webassets.filter import register_filter
     from dukpy.webassets import BabelJS
-    
+
     register_filter(BabelJS)
 
 Which makes the filter available with the ``babeljs`` name.
 
-**NOTE:** When using the BabelJS compiler for code that needs to run in the browser, make sure to add https://cdnjs.cloudflare.com/ajax/libs/babel-core/4.6.6/browser-polyfill.js dependency.
+**NOTE:** When using the BabelJS compiler for code that needs to run
+in the browser, make sure to add
+https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.6.1/polyfill.min.js
+dependency.
+
 
 Using the JavaScript Interpreter
 --------------------------------
 
 Using dukpy is as simple as calling the ``dukpy.evaljs`` function with
-the javascript code::
+the javascript code:
+
+.. code:: python
 
     >>> import dukpy
     >>> dukpy.evaljs("var o = {'value': 5}; o['value'] += 3; o")
