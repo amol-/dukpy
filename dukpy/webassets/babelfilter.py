@@ -17,4 +17,4 @@ class BabelJS(Filter):
 
     def input(self, _in, out, **kw):
         src = dukpy.babel_compile(_in.read())
-        out.write(src)
+        out.write(src['code'])
