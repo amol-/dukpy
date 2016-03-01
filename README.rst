@@ -1,11 +1,11 @@
 dukpy
 =====
 
-.. image:: https://travis-ci.org/amol-/dukpy.png?branch=master 
-    :target: https://travis-ci.org/amol-/dukpy 
+.. image:: https://travis-ci.org/amol-/dukpy.png?branch=master
+    :target: https://travis-ci.org/amol-/dukpy
 
 .. image:: https://coveralls.io/repos/amol-/dukpy/badge.png?branch=master
-    :target: https://coveralls.io/r/amol-/dukpy?branch=master 
+    :target: https://coveralls.io/r/amol-/dukpy?branch=master
 
 DukPy is a simple javascript interpreter for Python built on top of
 duktape engine **without any external dependency**.
@@ -22,7 +22,9 @@ program as it is mostly implemented in C.
 CoffeeScript Compiler
 ---------------------
 
-Using the coffeescript compiler is as easy as running::
+Using the coffeescript compiler is as easy as running:
+
+.. code:: python
 
     >>> import dukpy
     >>> dukpy.coffee_compile('''
@@ -34,7 +36,10 @@ Using the coffeescript compiler is as easy as running::
 TypeScript Transpiler
 ---------------------
 
-The TypeScript compiler can be used through the ``dukpy.typescript_compile`` function::
+The TypeScript compiler can be used through the
+``dukpy.typescript_compile`` function:
+
+.. code:: python
 
     >>> import dukpy
     >>> dukpy.typescript_compile('''
@@ -55,7 +60,10 @@ Currently the compiler has built-in options and doesn't accept additional ones,
 EcmaScript6 BabelJS Transpiler
 ------------------------------
 
-To compile ES6 code to ES5 for everyday usage you can use ``dukpy.babel_compile``::
+To compile ES6 code to ES5 for everyday usage you can use
+``dukpy.babel_compile``:
+
+.. code:: python
 
     >>> import dukpy
     >>> dukpy.babel_compile('''
@@ -71,12 +79,17 @@ To compile ES6 code to ES5 for everyday usage you can use ``dukpy.babel_compile`
     ... ''')
     '"use strict";\n\nvar _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };\n\nvar _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };\n\nvar Point = (function () {\n    function Point(x, y) {\n        _classCallCheck(this, Point);\n\n        this.x = x;\n        this.y = y;\n    }\n\n    _prototypeProperties(Point, null, {\n        toString: {\n            value: function toString() {\n                return "(" + this.x + ", " + this.y + ")";\n            },\n            writable: true,\n            configurable: true\n        }\n    });\n\n    return Point;\n})();\n'
 
-The DukPY based BabelJS compiler also provides a WebAssets ( http://webassets.readthedocs.org/en/latest/ ) filter to automatically compile ES6 code in your assets pipeline.
-You register this filter as ``babeljs`` within WebAssets using::
 You  can pass `options`__ to the babel compiler just as keywords on
 the call to ``babel_compile()``
 
 __ http://babeljs.io/docs/usage/options/
+
+The DukPY based BabelJS compiler also provides a WebAssets (
+http://webassets.readthedocs.org/en/latest/ ) filter to automatically
+compile ES6 code in your assets pipeline.  You register this filter as
+``babeljs`` within WebAssets using:
+
+.. code:: python
 
     from webassets.filter import register_filter
     from dukpy.webassets import BabelJS
@@ -115,7 +128,9 @@ Passing Arguments
 
 Any argument passed to ``evaljs`` is available in JavaScript inside
 the ``dukpy`` object in javascript. It must be possible to encode
-the arguments using JSON for them to be available in Javascript::
+the arguments using JSON for them to be available in Javascript:
+
+.. code:: python
 
     >>> import dukpy
     >>>
@@ -131,7 +146,9 @@ Running Multiple Scripts
 The ``evaljs`` function supports providing multiple source codes to
 be executed in the same context.
 
-Multiple script can be passed in a list or tuple::
+Multiple script can be passed in a list or tuple:
+
+.. code:: python
 
     >>> import dukpy
     >>> dukpy.evaljs(["var o = {'value': 5}",
@@ -143,7 +160,9 @@ This is useful when your code requires dependencies to work,
 as you can load the dependency and then your code.
 
 This is actually how the coffeescript compiler is implemented
-by DukPy itself::
+by DukPy itself:
+
+.. code:: python
 
     def coffee_compile(source):
         with open(COFFEE_COMPILER, 'r') as coffeescript_js:
