@@ -18,7 +18,7 @@ setup(
     version='0.0.1',
     description='Simple JavaScript interpreter for Python',
     long_description=README,
-    keywords='javascript compiler babeljs coffeescript',
+    keywords='javascript compiler babeljs coffeescript typescript',
     author='Alessandro Molina',
     author_email='alessandro.molina@axant.it',
     url='https://github.com/amol-/dukpy',
