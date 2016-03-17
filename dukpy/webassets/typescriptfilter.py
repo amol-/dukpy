@@ -12,9 +12,6 @@ class TypeScript(Filter):
     name = 'typescript'
     max_debug_level = None
 
-    def setup(self):
-        super(TypeScript, self).setup()
-
     def input(self, _in, out, **kw):
         src = dukpy.typescript_compile(_in.read())
-        out.write(src['code'])
+        out.write(src)

@@ -9,7 +9,7 @@ except ImportError:
 try:
     unicode
     string_types = (str, unicode)
-except NameError:
+except NameError:  #pragma: no cover
     string_types = (bytes, str)
 
 
