@@ -58,7 +58,7 @@ Currently the compiler has built-in options and doesn't accept additional ones,
 
 The DukPY based TypeScript compiler also provides a WebAssets (
 http://webassets.readthedocs.org/en/latest/ ) filter to automatically
-compile ES6 code in your assets pipeline.  You register this filter as
+compile TypeScript code in your assets pipeline.  You register this filter as
 ``typescript`` within WebAssets using:
 
 .. code:: python
