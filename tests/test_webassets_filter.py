@@ -50,16 +50,24 @@ var greeter = new Greeter("Hello, world!");
         out.seek(0)
         ans = out.read()
         
-        expected = """var Greeter = (function () {
-    function Greeter(greeting) {
-        this.greeting = greeting;
+        expected = """System.register([], function(exports_1) {
+    var Greeter, greeter;
+    return {
+        setters:[],
+        execute: function() {
+            var Greeter = (function () {
+                function Greeter(greeting) {
+                    this.greeting = greeting;
+                }
+                Greeter.prototype.greet = function () {
+                    return "<h1>" + this.greeting + "</h1>";
+                };
+                return Greeter;
+            })();
+            ;
+            var greeter = new Greeter("Hello, world!");
+        }
     }
-    Greeter.prototype.greet = function () {
-        return "<h1>" + this.greeting + "</h1>";
-    };
-    return Greeter;
-})();
-;
-var greeter = new Greeter("Hello, world!");
+});
 """
-        assert expected in ans, report_diff(expected, ans) 
+        assert expected in ans, report_diff(expected, ans)
