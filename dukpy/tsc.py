@@ -2,7 +2,7 @@ import os
 from .evaljs import evaljs
 
 TS_COMPILER = os.path.join(os.path.dirname(__file__), 'typescriptServices.js')
-TSC_OPTIONS = '{ module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES5, newLine: 1 }'
+TSC_OPTIONS = '{ module: ts.ModuleKind.System, target: ts.ScriptTarget.ES5, newLine: 1 }'
 
 
 def typescript_compile(source):
