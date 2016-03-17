@@ -56,6 +56,19 @@ The TypeScript compiler can be used through the
 
 Currently the compiler has built-in options and doesn't accept additional ones,
 
+The DukPY based TypeScript compiler also provides a WebAssets (
+http://webassets.readthedocs.org/en/latest/ ) filter to automatically
+compile ES6 code in your assets pipeline.  You register this filter as
+``typescript`` within WebAssets using:
+
+.. code:: python
+
+    from webassets.filter import register_filter
+    from dukpy.webassets import TypeScript
+
+    register_filter(TypeScript)
+
+Which makes the filter available with the ``typescript`` name.
 
 EcmaScript6 BabelJS Transpiler
 ------------------------------
