@@ -70,6 +70,11 @@ compile TypeScript code in your assets pipeline.  You register this filter as
 
 Which makes the filter available with the ``typescript`` name.
 
+**NOTE:** When using the TypeScript compiler for code that needs to run
+in the browser, make sure to add
+https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.24/system.js
+dependency. As ``import`` statements are resolved using SystemJS.
+
 EcmaScript6 BabelJS Transpiler
 ------------------------------
 
