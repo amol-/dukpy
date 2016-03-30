@@ -23,7 +23,7 @@ setup(
     author_email='alessandro.molina@axant.it',
     url='https://github.com/amol-/dukpy',
     license='MIT',
-    packages=['dukpy'],
+    packages=['dukpy', 'dukpy.webassets'],
     ext_modules=[duktape],
     package_data={
         'dukpy': ['*.js'],
