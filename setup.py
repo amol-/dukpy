@@ -9,8 +9,9 @@ except IOError:
 
 duktape = Extension('dukpy._dukpy',
                     define_macros=[('DUK_OPT_DEEP_C_STACK', '1')],
-                    sources=[os.path.join('duktape', 'duktape.c'), 
-                             'pyduktape.c'],
+                    sources=[os.path.join('duktape', 'duktape.c'),
+                             os.path.join('src','_support.c'),
+                             os.path.join('src','pyduktape.c')],
                     include_dirs=[os.path.join('.', 'duktape')])
 
 setup(

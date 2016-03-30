@@ -142,7 +142,7 @@ If execution fails a ``dukpy.JSRuntimeError`` exception is raised
 with the failure reason.
 
 Passing Arguments
------------------
+~~~~~~~~~~~~~~~~~
 
 Any argument passed to ``evaljs`` is available in JavaScript inside
 the ``dukpy`` object in javascript. It must be possible to encode
@@ -159,7 +159,7 @@ the arguments using JSON for them to be available in Javascript:
     10
 
 Running Multiple Scripts
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``evaljs`` function supports providing multiple source codes to
 be executed in the same context.
@@ -186,3 +186,30 @@ by DukPy itself:
         with open(COFFEE_COMPILER, 'r') as coffeescript_js:
             return evaljs((coffeescript_js.read(), 'CoffeeScript.compile(dukpy.coffeecode)'),
                           coffeecode=source)
+
+Using a persistent JavaScript Interpreter
+-----------------------------------------
+
+The ``evaljs`` function creates a new interpreter on each call,
+this is usually convenient and avoid errors due to dirt global variables
+or unexpected execution status.
+
+In some cases you might want to run code that has a slow bootstrap, so
+it's convenient to reuse the same interpreter between two different calls
+so that the bootstrap cost has already been paid during the first execution.
+
+This can be achieved by using the ``dukpy.JSInterpreter`` object.
+
+Creating a ``dukpy.JSInterpreter`` permits to evaluate code inside that interpreter
+and multiple ``eval`` calls will share the same interpreter and global status:
+
+
+.. code:: python
+
+    >>> import dukpy
+    >>> interpreter = dukpy.JSInterpreter()
+    >>> interpreter.eval("var o = {'value': 5}; o")
+    {u'value': 5}
+    >>> interpreter.eval("o.value += 1; o")
+    {u'value': 6}
+

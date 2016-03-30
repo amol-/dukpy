@@ -1,0 +1,128 @@
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <Python.h>
+#include "duktape.h"
+
+/* Provided in _support.c */
+duk_ret_t stack_json_encode(duk_context *ctx);
+void duktape_fatal_error_handler(duk_context *ctx, duk_errcode_t code, const char *msg);
+duk_context *get_context_from_capsule(PyObject* pyctx);
+PyObject *make_capsule_for_context(duk_context *ctx);
+
+#if PY_MAJOR_VERSION >= 3
+#define CONDITIONAL_PY3(three, two) (three)
+#else
+#define CONDITIONAL_PY3(three, two) (two)
+#endif
+/* End of support functions */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static PyObject *DukPyError;
+
+
+static PyObject *DukPy_create_context(PyObject *self, PyObject *_) {
+    duk_context *ctx = duk_create_heap(NULL, NULL, NULL, NULL, duktape_fatal_error_handler);
+    if (!ctx) {
+        PyErr_SetString(DukPyError, "Unable to create dukpy interpreter context");
+        return NULL;
+    }
+
+    return make_capsule_for_context(ctx);
+}
+
+
+static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
+    PyObject *pyctx;
+    const char *command;
+    const char *vars;
+
+    if (!PyArg_ParseTuple(args, "Oss", &pyctx, &command, &vars))
+        return NULL;
+
+    duk_context *ctx = get_context_from_capsule(pyctx);
+    if (!ctx) {
+        PyErr_SetString(DukPyError, "Invalid dukpy interpreter context");
+        return NULL;
+    }
+
+    duk_gc(ctx, 0);
+
+    duk_push_string(ctx, vars);
+    duk_json_decode(ctx, -1);
+    duk_put_global_string(ctx, "dukpy");
+
+    int res = duk_peval_string(ctx, command);
+    if (res != 0) {
+        PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
+        return NULL;
+    }
+
+    duk_int_t rc = duk_safe_call(ctx, stack_json_encode, 1, 1);
+    if (rc != DUK_EXEC_SUCCESS) {
+        PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
+        return NULL;
+    }
+
+    const char *output = duk_get_string(ctx, -1);
+    PyObject *result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
+    duk_pop(ctx);
+
+    return result;
+}
+
+
+static PyMethodDef DukPy_methods[] = {
+    {"eval_string", DukPy_eval_string, METH_VARARGS, "Run Javascript code from a string."},
+    {"create_context", DukPy_create_context, METH_NOARGS, "Create an interpreter context where to run code"},
+    {NULL, NULL, 0, NULL}
+};
+
+static char DukPy_doc[] = "Provides Javascript support to Python through the duktape library.";
+
+
+#if PY_MAJOR_VERSION >= 3
+
+static struct PyModuleDef dukpymodule = {
+    PyModuleDef_HEAD_INIT,
+    "_dukpy",
+    DukPy_doc,
+    -1,
+    DukPy_methods
+};
+
+PyMODINIT_FUNC 
+PyInit__dukpy() 
+{
+    PyObject *module = PyModule_Create(&dukpymodule);
+    if (module == NULL)
+       return NULL;
+
+    DukPyError = PyErr_NewException("_dukpy.JSRuntimeError", NULL, NULL);
+    Py_INCREF(DukPyError);
+    PyModule_AddObject(module, "JSRuntimeError", DukPyError);
+    return module;
+}
+
+#else
+
+PyMODINIT_FUNC 
+init_dukpy()
+{
+    PyObject *module = Py_InitModule3("_dukpy", DukPy_methods, DukPy_doc);
+    if (module == NULL)
+       return;
+
+    DukPyError = PyErr_NewException("_dukpy.JSRuntimeError", NULL, NULL);
+    Py_INCREF(DukPyError);
+    PyModule_AddObject(module, "JSRuntimeError", DukPyError);
+}
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
