@@ -9,10 +9,8 @@ except ImportError:
 try:  # pragma: no cover
     unicode
     string_types = (str, unicode)
-    jscode_type = str
 except NameError:  # pragma: no cover
     string_types = (bytes, str)
-    jscode_type = str
 
 
 class JSInterpreter(object):
