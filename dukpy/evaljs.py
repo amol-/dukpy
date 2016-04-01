@@ -6,10 +6,10 @@ try:
 except ImportError:
     from collections import Iterable
 
-try:
+try:  # pragma: no cover
     unicode
     string_types = (str, unicode)
-except NameError:  #pragma: no cover
+except NameError:  # pragma: no cover
     string_types = (bytes, str)
 
 
