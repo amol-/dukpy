@@ -41,7 +41,7 @@ class JSInterpreter(object):
             else:
                 jscode = jscode.encode('utf-8')
 
-        res = _dukpy.eval_string(self._ctx, jscode, jsvars)
+        res = _dukpy.eval_string(self, jscode, jsvars)
         if res is None:
             return None
 

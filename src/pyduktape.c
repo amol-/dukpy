@@ -36,12 +36,18 @@ static PyObject *DukPy_create_context(PyObject *self, PyObject *_) {
 
 
 static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
-    PyObject *pyctx;
+    PyObject *interpreter;
     const char *command;
     const char *vars;
 
-    if (!PyArg_ParseTuple(args, "Oss", &pyctx, &command, &vars))
+    if (!PyArg_ParseTuple(args, "Oss", &interpreter, &command, &vars))
         return NULL;
+
+    PyObject *pyctx = PyObject_GetAttrString(interpreter, "_ctx");
+    if (!pyctx) {
+        PyErr_SetString(DukPyError, "Missing dukpy interpreter context");
+        return NULL;
+    }
 
     duk_context *ctx = get_context_from_capsule(pyctx);
     if (!ctx) {
