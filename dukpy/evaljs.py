@@ -9,8 +9,10 @@ except ImportError:
 try:  # pragma: no cover
     unicode
     string_types = (str, unicode)
+    jscode_type = str
 except NameError:  # pragma: no cover
     string_types = (bytes, str)
+    jscode_type = str
 
 
 class JSInterpreter(object):
@@ -33,8 +35,13 @@ class JSInterpreter(object):
         if not isinstance(code, string_types):
             jscode = ';\n'.join(code)
 
-        if not isinstance(jscode, bytes):
-            jscode = jscode.encode('utf-8')
+        if not isinstance(jscode, str):
+            # Source code must be str on both Py2 and Py3
+            # so it must be encoded on Py2 and decoded on Py3
+            if isinstance(jscode, bytes):
+                jscode = jscode.decode('utf-8')
+            else:
+                jscode = jscode.encode('utf-8')
 
         res = _dukpy.eval_string(self._ctx, jscode, jsvars)
         if res is None:
