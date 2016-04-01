@@ -14,10 +14,19 @@ except NameError:  #pragma: no cover
 
 
 class JSInterpreter(object):
+    """JavaScript Interpreter"""
     def __init__(self):
         self._ctx = _dukpy.create_context()
 
-    def eval(self, code, **kwargs):
+    def evaljs(self, code, **kwargs):
+        """Runs JavaScript code in the context of the interpreter.
+
+        All arguments will be converted to plain javascript objects
+        through the JSON encoder and will be available in `dukpy`
+        global object.
+
+        Returns the last object on javascript stack.
+        """
         jsvars = json.dumps(kwargs)
         jscode = code
 
@@ -33,4 +42,4 @@ class JSInterpreter(object):
 
 def evaljs(code, **kwargs):
     """Evaluates the given ``code`` as JavaScript and returns the result"""
-    return JSInterpreter().eval(code, **kwargs)
+    return JSInterpreter().evaljs(code, **kwargs)

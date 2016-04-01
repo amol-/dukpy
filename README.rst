@@ -208,8 +208,8 @@ and multiple ``eval`` calls will share the same interpreter and global status:
 
     >>> import dukpy
     >>> interpreter = dukpy.JSInterpreter()
-    >>> interpreter.eval("var o = {'value': 5}; o")
+    >>> interpreter.evaljs("var o = {'value': 5}; o")
     {u'value': 5}
-    >>> interpreter.eval("o.value += 1; o")
+    >>> interpreter.evaljs("o.value += 1; o")
     {u'value': 6}
 
