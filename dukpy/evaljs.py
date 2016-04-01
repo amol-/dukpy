@@ -33,6 +33,9 @@ class JSInterpreter(object):
         if not isinstance(code, string_types):
             jscode = ';\n'.join(code)
 
+        if not isinstance(jscode, bytes):
+            jscode = jscode.encode('utf-8')
+
         res = _dukpy.eval_string(self._ctx, jscode, jsvars)
         if res is None:
             return None
