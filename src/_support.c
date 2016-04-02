@@ -4,7 +4,7 @@
 #include <Python.h>
 #include "capsulethunk.h"
 #include "duktape.h"
-
+#include "_support.h"
 
 static char const * const CONTEXT_CAPSULE_NAME = "DUKPY_CONTEXT_CAPSULE";
 

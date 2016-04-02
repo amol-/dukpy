@@ -3,19 +3,8 @@
 #include <string.h>
 #include <Python.h>
 #include "duktape.h"
+#include "_support.h"
 
-/* Provided in _support.c */
-duk_ret_t stack_json_encode(duk_context *ctx);
-void duktape_fatal_error_handler(duk_context *ctx, duk_errcode_t code, const char *msg);
-duk_context *get_context_from_capsule(PyObject* pyctx);
-PyObject *make_capsule_for_context(duk_context *ctx);
-
-#if PY_MAJOR_VERSION >= 3
-#define CONDITIONAL_PY3(three, two) (three)
-#else
-#define CONDITIONAL_PY3(three, two) (two)
-#endif
-/* End of support functions */
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +29,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     const char *command;
     const char *vars;
 
-    if (!PyArg_ParseTuple(args, "Oss", &interpreter, &command, &vars))
+    if (!PyArg_ParseTuple(args, CONDITIONAL_PY3("Oyy", "Oss"), &interpreter, &command, &vars))
         return NULL;
 
     PyObject *pyctx = PyObject_GetAttrString(interpreter, "_ctx");
