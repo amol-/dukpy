@@ -100,5 +100,6 @@ int call_py_function(duk_context *ctx) {
 
     duk_push_string(ctx, PyBytes_AsString(ret));
     duk_json_decode(ctx, -1);
+    Py_XDECREF(ret);
     return 1;
 }
