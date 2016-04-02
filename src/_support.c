@@ -54,7 +54,8 @@ int call_py_function(duk_context *ctx) {
 
     /* Create array to contain all function arguments */
     duk_push_array(ctx);
-    for(int i=0; i<args_count-1; i++) {
+    int i;
+    for(i=0; i<args_count-1; i++) {
         duk_swap_top(ctx, -2);
         duk_put_prop_index(ctx, -2, i);
     }
