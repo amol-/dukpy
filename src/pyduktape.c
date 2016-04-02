@@ -46,9 +46,20 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
 
     duk_gc(ctx, 0);
 
+    /* Save a reference to the JSInterpreter in the global stash */
+    duk_push_global_stash(ctx);
+    duk_push_pointer(ctx, interpreter);
+    duk_put_prop_string(ctx, -2, "_py_interpreter");
+    duk_pop(ctx);
+
+    /* Make passed arguments available as the dukpy global object */
     duk_push_string(ctx, vars);
     duk_json_decode(ctx, -1);
     duk_put_global_string(ctx, "dukpy");
+
+    /* Add a call_python function allows calling Python functions */
+    duk_push_c_function(ctx, call_py_function, DUK_VARARGS);
+    duk_put_global_string(ctx, "call_python");
 
     int res = duk_peval_string(ctx, command);
     if (res != 0) {

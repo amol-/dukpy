@@ -47,3 +47,57 @@ void context_destroy(PyObject* pyctx) {
 PyObject *make_capsule_for_context(duk_context *ctx) {
     return PyCapsule_New(ctx, CONTEXT_CAPSULE_NAME, &context_destroy);
 }
+
+
+int call_py_function(duk_context *ctx) {
+    int args_count = duk_get_top(ctx);
+
+    /* Create array to contain all function arguments */
+    duk_push_array(ctx);
+    for(int i=0; i<args_count-1; i++) {
+        duk_swap_top(ctx, -2);
+        duk_put_prop_index(ctx, -2, i);
+    }
+    char const *args = duk_json_encode(ctx, -1);
+    char const *pyfuncname = duk_get_string(ctx, -2);
+
+    duk_push_global_stash(ctx);
+    duk_get_prop_string(ctx, -1, "_py_interpreter");
+    PyObject *interpreter = duk_get_pointer(ctx, -1);
+    duk_pop(ctx);
+    duk_pop(ctx);
+
+    PyObject *ret = PyObject_CallMethod(interpreter, "_call_python", CONDITIONAL_PY3("yy", "ss"),
+                                        pyfuncname, args);
+
+    /* Pop array of argumnets and method name */
+    duk_pop(ctx);
+    duk_pop(ctx);
+
+    if (ret == NULL) {
+        PyObject *ptype, *pvalue, *ptraceback;
+        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+
+        PyObject *error_repr = PyObject_Repr(pvalue);
+        PyObject *error = PyUnicode_AsEncodedString(error_repr, "UTF-8", "replace");
+        char const *strerror = PyBytes_AsString(error);
+
+        duk_push_error_object(ctx, DUK_ERR_EVAL_ERROR,
+                              "Error while calling Python Function: %s", strerror);
+
+        Py_XDECREF(error_repr);
+        Py_XDECREF(ptype);
+        Py_XDECREF(ptraceback);
+        Py_XDECREF(pvalue);
+        Py_XDECREF(error);
+
+        duk_throw(ctx);
+    }
+
+    if (ret == Py_None)
+        return 0;
+
+    duk_push_string(ctx, PyBytes_AsString(ret));
+    duk_json_decode(ctx, -1);
+    return 1;
+}

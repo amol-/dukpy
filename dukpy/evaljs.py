@@ -17,6 +17,7 @@ class JSInterpreter(object):
     """JavaScript Interpreter"""
     def __init__(self):
         self._ctx = _dukpy.create_context()
+        self._funcs = {}
 
     def evaljs(self, code, **kwargs):
         """Runs JavaScript code in the context of the interpreter.
@@ -44,6 +45,25 @@ class JSInterpreter(object):
             return None
 
         return json.loads(res.decode('utf-8'))
+
+    def export_function(self, name, func):
+        """Exports a python function to the javascript layer with the given name.
+
+        Note that it is possible to pass back and forth between JS and Python
+        only plain javascript objects and that the objects are passed by
+        copy so it is not possible to modify a python object from js.
+        """
+        self._funcs[name] = func
+
+    def _call_python(self, func, json_args):
+        # Arguments came in reverse order from JS
+        func = func.decode('utf-8')
+        json_args = json_args.decode('utf-8')
+
+        args = list(reversed(json.loads(json_args)))
+        ret = self._funcs[func](*args)
+        if ret is not None:
+            return json.dumps(ret).encode('utf-8')
 
 
 def evaljs(code, **kwargs):
