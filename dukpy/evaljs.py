@@ -19,6 +19,17 @@ class JSInterpreter(object):
         self._ctx = _dukpy.create_context()
         self._funcs = {}
 
+    def _adapt_code(self, code):
+        def _read_files(f):
+            if hasattr(f, 'read'):
+                return f.read()
+            else:
+                return f
+        code = _read_files(code)
+        if not isinstance(code, string_types) and hasattr(code, '__iter__'):
+            code = ';\n'.join(map(_read_files, code))
+        return code
+
     def evaljs(self, code, **kwargs):
         """Runs JavaScript code in the context of the interpreter.
 
@@ -29,10 +40,7 @@ class JSInterpreter(object):
         Returns the last object on javascript stack.
         """
         jsvars = json.dumps(kwargs)
-        jscode = code
-
-        if not isinstance(code, string_types):
-            jscode = ';\n'.join(code)
+        jscode = self._adapt_code(code)
 
         if not isinstance(jscode, bytes):
             jscode = jscode.encode('utf-8')

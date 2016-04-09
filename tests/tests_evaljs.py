@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+import os
+
 import dukpy
 
 
@@ -21,3 +24,16 @@ class TestEvalJS(object):
     def test_unicode_jssrc(self):
         s = dukpy.evaljs("dukpy.c + '華'", c="華")
         assert s == '華華'
+
+    def test_eval_files(self):
+        testfile = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test.js')
+        with open(testfile) as f:
+            s = dukpy.evaljs(f)
+        assert s == 8, s
+
+    def test_eval_files_multi(self):
+        testfile = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test.js')
+        with open(testfile) as f:
+            with open(testfile) as f2:
+                s = dukpy.evaljs([f, f2])
+        assert s == 11, s
