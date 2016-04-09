@@ -33,11 +33,14 @@ class JSModuleLoader(object):
                 return module_file
 
     def load(self, module_name):
-        """Returns source code of the given module."""
+        """Returns source code of the given module.
+
+        Only supports source code files encoded as UTF-8
+        """
         path = self.lookup(module_name)
         if path:
             with open(path, 'rb') as f:
-                return f.read()
+                return f.read().decode('utf-8')
 
     def _lookup(self, module_path):
         # Module is a plain .js file
