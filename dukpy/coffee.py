@@ -1,7 +1,7 @@
 import os
 from .evaljs import evaljs
 
-COFFEE_COMPILER = os.path.join(os.path.dirname(__file__), 'coffeescript.js')
+COFFEE_COMPILER = os.path.join(os.path.dirname(__file__), 'jsmodules', 'coffeescript.js')
 
 
 def coffee_compile(source):
