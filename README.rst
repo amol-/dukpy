@@ -121,6 +121,18 @@ in the browser, make sure to add
 https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.6.1/polyfill.min.js
 dependency.
 
+JSX to Rect Transpiling
+-----------------------
+
+DukPy provides a built-in compiler from JSX to React, this is available as
+``dukpy.jsx_compile``:
+
+.. code:: python
+
+    >>> import dukpy
+    >>> dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
+    u'"use strict";\n\nvar react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);'
+
 
 Using the JavaScript Interpreter
 --------------------------------
