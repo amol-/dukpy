@@ -14,6 +14,7 @@ It comes with a bunch of common transpilers built-in for convenience:
     - *CoffeeScript*
     - *BabelJS*
     - *TypeScript*
+    - *JSX*
 
 Dukpy has been tested on **Python 2.7** and **Python 3.4**, dukpy
 is currently not production ready and might actually crash your
