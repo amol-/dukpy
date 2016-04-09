@@ -1,4 +1,5 @@
 import dukpy
+from diffreport import report_diff
 
 
 class TestJSInterpreter(object):
@@ -17,3 +18,15 @@ class TestJSInterpreter(object):
         interpreter.export_function('say_hello', _say_hello)
         res = interpreter.evaljs("call_python('say_hello', 3, 'world')")
         assert res == 'Hello world world world', res
+
+    def test_module_loader(self):
+        interpreter = dukpy.JSInterpreter()
+        res = interpreter.evaljs('''
+    babel = require('babel-6.4.4.min');
+    babel.transform(dukpy.es6code, {presets: ["es2015"]}).code;
+''', es6code='let i=5;')
+
+        expected = '''"use strict";
+
+var i = 5;'''
+        assert res == expected, report_diff(expected, res)

@@ -1,4 +1,8 @@
+from __future__ import print_function
 import json
+import os
+
+from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
 
 try:
@@ -16,19 +20,17 @@ except NameError:  # pragma: no cover
 class JSInterpreter(object):
     """JavaScript Interpreter"""
     def __init__(self):
+        self._loader = JSModuleLoader()
         self._ctx = _dukpy.create_context()
         self._funcs = {}
 
-    def _adapt_code(self, code):
-        def _read_files(f):
-            if hasattr(f, 'read'):
-                return f.read()
-            else:
-                return f
-        code = _read_files(code)
-        if not isinstance(code, string_types) and hasattr(code, '__iter__'):
-            code = ';\n'.join(map(_read_files, code))
-        return code
+        self._init_process()
+        self._init_console()
+        self._init_require()
+
+    @property
+    def loader(self):
+        return self._loader
 
     def evaljs(self, code, **kwargs):
         """Runs JavaScript code in the context of the interpreter.
@@ -72,6 +74,42 @@ class JSInterpreter(object):
         ret = self._funcs[func](*args)
         if ret is not None:
             return json.dumps(ret).encode('utf-8')
+
+    def _init_process(self):
+        self.evaljs("process = {}; process.env = dukpy.environ", environ=dict(os.environ))
+
+    def _init_console(self):
+        self.export_function('dukpy.print', print)
+        self.evaljs("""
+        ;console = {
+            log: function() {
+                call_python('dukpy.print', Array.prototype.join.call(arguments, ' '));
+            }
+        };
+        """)
+
+    def _init_require(self):
+        self.export_function('dukpy.lookup_module', self._loader.load)
+        self.evaljs("""
+        ;Duktape.modSearch = function (id, require, exports, module) {
+            var m = call_python('dukpy.lookup_module', id);
+            if (!m)
+                throw new Error('cannot find module: ' + id);
+            return m;
+        };
+""")
+
+    def _adapt_code(self, code):
+        def _read_files(f):
+            if hasattr(f, 'read'):
+                return f.read()
+            else:
+                return f
+
+        code = _read_files(code)
+        if not isinstance(code, string_types) and hasattr(code, '__iter__'):
+            code = ';\n'.join(map(_read_files, code))
+        return code
 
 
 def evaljs(code, **kwargs):
