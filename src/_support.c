@@ -76,12 +76,20 @@ int call_py_function(duk_context *ctx) {
     duk_pop(ctx);
 
     if (ret == NULL) {
+        PyObject *error = NULL;
+        char const *strerror = "Unknown Error";
+
         PyObject *ptype, *pvalue, *ptraceback;
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
 
         PyObject *error_repr = PyObject_Repr(pvalue);
-        PyObject *error = PyUnicode_AsEncodedString(error_repr, "UTF-8", "replace");
-        char const *strerror = PyBytes_AsString(error);
+        if (PyUnicode_Check(error_repr)) {
+            error = PyUnicode_AsEncodedString(error_repr, "UTF-8", "replace");
+            strerror = PyBytes_AsString(error);
+        }
+        else if (PyBytes_Check(error_repr)) {
+            strerror = PyBytes_AsString(error_repr);
+        }
 
         duk_push_error_object(ctx, DUK_ERR_EVAL_ERROR,
                               "Error while calling Python Function: %s", strerror);
