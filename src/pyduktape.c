@@ -63,13 +63,16 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
 
     int res = duk_peval_string(ctx, command);
     if (res != 0) {
+        duk_get_prop_string(ctx, -1, "stack");
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
+        duk_pop(ctx);
         return NULL;
     }
 
     duk_int_t rc = duk_safe_call(ctx, stack_json_encode, 1, 1);
     if (rc != DUK_EXEC_SUCCESS) {
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
+        duk_pop(ctx);
         return NULL;
     }
 
