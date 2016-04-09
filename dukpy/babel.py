@@ -18,3 +18,10 @@ def babel_compile(source, **kwargs):
             es6code=source,
             babel_options=kwargs
         )
+
+
+def jsx_compile(source, mode='react'):
+    modes = {
+        'react': ["transform-react-jsx"]
+    }
+    return babel_compile(source, plugins=modes.get(mode, []))['code']

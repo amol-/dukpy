@@ -71,3 +71,12 @@ var greeter = new Greeter("Hello, world!");
 });"""
 
         assert expected in ans, report_diff(expected, ans)
+
+    def test_jsx(self):
+        ans = dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
+
+        expected = """"use strict";
+
+var react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);"""
+
+        assert expected == ans, report_diff(expected, ans)
