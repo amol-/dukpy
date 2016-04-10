@@ -39,7 +39,7 @@ def install_jspackage(package_name, version, modulesdir):
     """
     url = 'http://registry.npmjs.org/{}'
     with closing(urlopen(url.format(package_name))) as data:
-        package_info = json.loads(data.read())
+        package_info = json.loads(data.read().decode('utf-8'))
         package_versions = package_info['versions']
         version_info = package_versions.get(version)
         if version_info is None:
