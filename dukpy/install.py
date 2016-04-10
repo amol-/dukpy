@@ -66,7 +66,7 @@ def install_jspackage(package_name, version, modulesdir):
 
         tarball.seek(0)
         print('Extracting... ')
-        with tarfile.open(fileobj=tarball) as tb:
+        with closing(tarfile.open(fileobj=tarball)) as tb:
             dest = os.path.join(modulesdir, version_info['name'])
             tmpdir = tempfile.mkdtemp()
             try:
