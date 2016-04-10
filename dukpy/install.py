@@ -43,7 +43,7 @@ def install_jspackage(package_name, version, modulesdir):
         package_versions = package_info['versions']
         version_info = package_versions.get(version)
         if version_info is None:
-            print('Version {} not found, available versions are {}'.format(
+            print('Version {0} not found, available versions are {1}'.format(
                 version, ', '.join(sorted(package_versions.keys()))
             ))
             return 2
@@ -55,7 +55,7 @@ def install_jspackage(package_name, version, modulesdir):
             return 3
 
         tarball = BytesIO()
-        print('Downloading {}'.format(download_url))
+        print('Downloading {0}'.format(download_url))
         with closing(urlopen(download_url)) as data:
             chunk = data.read(1024)
             while chunk:
@@ -76,5 +76,5 @@ def install_jspackage(package_name, version, modulesdir):
             finally:
                 shutil.rmtree(tmpdir)
 
-        print('Installed in {}'.format(dest))
+        print('Installed in {0}'.format(dest))
 
