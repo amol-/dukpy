@@ -37,7 +37,7 @@ def install_jspackage(package_name, version, modulesdir):
 
         install_jspackage('react', '0.14.8', './node_modules')
     """
-    url = 'http://registry.npmjs.org/{}'
+    url = 'http://registry.npmjs.org/{0}'
     with closing(urlopen(url.format(package_name))) as data:
         package_info = json.loads(data.read().decode('utf-8'))
         package_versions = package_info['versions']
