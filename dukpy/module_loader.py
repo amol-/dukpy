@@ -40,7 +40,7 @@ class JSModuleLoader(object):
         path = self.lookup(module_name)
         if path:
             with open(path, 'rb') as f:
-                return f.read().decode('utf-8')
+                return path, f.read().decode('utf-8')
 
     def _lookup(self, module_path):
         # Module is a plain .js file

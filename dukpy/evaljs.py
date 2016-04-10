@@ -95,7 +95,8 @@ class JSInterpreter(object):
             var m = call_python('dukpy.lookup_module', id);
             if (!m)
                 throw new Error('cannot find module: ' + id);
-            return m;
+            module.filename = m[0];
+            return m[1];
         };
 """)
 

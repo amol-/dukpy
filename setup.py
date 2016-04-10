@@ -40,5 +40,10 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: JavaScript',
-    ]
+    ],
+    entry_points={
+        'console_scripts': [
+            'dukpy-install = dukpy.install:main'
+        ]
+    }
 )
