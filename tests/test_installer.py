@@ -10,8 +10,7 @@ class TestPackageInstaller(object):
         self.tmpdir = tempfile.mkdtemp()
 
     def tearDown(self):
-        #shutil.rmtree(self.tmpdir)
-        pass
+        shutil.rmtree(self.tmpdir)
 
     def test_install_react(self):
         dukpy.install_jspackage('react', '0.14.8', self.tmpdir)
