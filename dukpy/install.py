@@ -27,7 +27,7 @@ def main():
               'a very basic script that does not support dependencies.')
         return 1
 
-    install_jspackage(package_name, version, './node_modules')
+    install_jspackage(package_name, version, './js_modules')
 
 
 def install_jspackage(package_name, version, modulesdir):
