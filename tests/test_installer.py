@@ -36,6 +36,10 @@ class TestPackageInstaller(object):
             dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, 'react'))
 
+    def test_install_command_missing_args(self):
+        with mock.patch.object(sys, 'argv', ['dukpy-install']):
+            assert dukpy_install.main() == 1
+
     def test_install_command_without_dest(self):
         if os.path.exists('./js_modules'):
             raise SkipTest('local destination directory already exists...')
