@@ -10,6 +10,7 @@ install:
   - "travis_retry pip install nose"
   - "travis_retry pip install coveralls"
   - "travis_retry pip install webassets"
+  - "travis_retry pip install mock"
   - "travis_retry pip install --pre -e ."
 
 script: "nosetests -v --with-coverage --cover-package=dukpy --cover-erase"
