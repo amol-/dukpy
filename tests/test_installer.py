@@ -44,6 +44,10 @@ class TestPackageInstaller(object):
             dukpy_install.main()
         assert os.path.exists(os.path.join('./js_modules', 'react'))
 
+    def test_install_command_substrate_error(self):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '9999', self.tmpdir]):
+            assert dukpy_install.main() == 2
+
     def test_install_unexisting_package(self):
         try:
             dukpy.install_jspackage('non_existing_suerly_missing_dunno', '1', self.tmpdir)
