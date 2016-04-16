@@ -5,6 +5,8 @@ import tempfile
 
 import sys
 import mock
+from nose.tools import raises
+
 import dukpy
 from dukpy import install as dukpy_install
 
@@ -29,9 +31,21 @@ class TestPackageInstaller(object):
         assert res == '<div class="helloworld">Hello Alessandro</div>', res
 
     def test_install_command(self):
-        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8']):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8', self.tmpdir]):
             dukpy_install.main()
         assert os.path.exists(os.path.join('./js_modules', 'react'))
+
+    def test_install_unexisting_package(self):
+        try:
+            dukpy.install_jspackage('non_existing_suerly_missing_dunno', '1', self.tmpdir)
+        except:
+            pass
+        else:
+            assert False, 'Should have not found exception'
+
+    @raises(dukpy_install.JSPackageInstallError)
+    def test_install_unexisting_version(self):
+        dukpy.install_jspackage('react', '9999', self.tmpdir)
 
 
 TEST_CODE = '''

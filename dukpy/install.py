@@ -27,7 +27,16 @@ def main():
               'a very basic script that does not support dependencies.')
         return 1
 
-    install_jspackage(package_name, version, './js_modules')
+    try:
+        dest = args[2]
+    except:
+        dest = './js_modules'
+
+    try:
+        return install_jspackage(package_name, version, dest)
+    except JSPackageInstallError as e:
+        print(e)
+        return e.error_code
 
 
 def install_jspackage(package_name, version, modulesdir):
@@ -43,16 +52,15 @@ def install_jspackage(package_name, version, modulesdir):
         package_versions = package_info['versions']
         version_info = package_versions.get(version)
         if version_info is None:
-            print('Version {0} not found, available versions are {1}'.format(
+            raise JSPackageInstallError('Version {0} not found, available versions are {1}'.format(
                 version, ', '.join(sorted(package_versions.keys()))
-            ))
-            return 2
+            ), error_code=2)
 
         try:
             download_url = version_info['dist']['tarball']
         except KeyError:
-            print('Unable to detect a supported download url for package')
-            return 3
+            raise JSPackageInstallError('Unable to detect a supported download url for package',
+                                        error_code=3)
 
         tarball = BytesIO()
         print('Downloading {0}'.format(download_url))
@@ -78,3 +86,8 @@ def install_jspackage(package_name, version, modulesdir):
 
         print('Installed in {0}'.format(dest))
 
+
+class JSPackageInstallError(Exception):
+    def __init__(self, msg, error_code):
+        super(JSPackageInstallError, self).__init__(msg)
+        self.error_code = error_code
