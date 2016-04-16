@@ -5,6 +5,7 @@ import tempfile
 
 import sys
 import mock
+from nose import SkipTest
 from nose.tools import raises
 
 import dukpy
@@ -34,6 +35,14 @@ class TestPackageInstaller(object):
         with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8', self.tmpdir]):
             dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, 'react'))
+
+    def test_install_command_without_dest(self):
+        if os.path.exists('./js_modules'):
+            raise SkipTest('local destination directory already exists...')
+
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8']):
+            dukpy_install.main()
+        assert os.path.exists(os.path.join('./js_modules', 'react'))
 
     def test_install_unexisting_package(self):
         try:
