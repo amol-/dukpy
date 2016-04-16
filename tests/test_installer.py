@@ -33,7 +33,7 @@ class TestPackageInstaller(object):
     def test_install_command(self):
         with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8', self.tmpdir]):
             dukpy_install.main()
-        assert os.path.exists(os.path.join('./js_modules', 'react'))
+        assert os.path.exists(os.path.join(self.tmpdir, 'react'))
 
     def test_install_unexisting_package(self):
         try:
@@ -46,6 +46,15 @@ class TestPackageInstaller(object):
     @raises(dukpy_install.JSPackageInstallError)
     def test_install_unexisting_version(self):
         dukpy.install_jspackage('react', '9999', self.tmpdir)
+
+    @raises(dukpy_install.JSPackageInstallError)
+    def test_install_missing_download_url(self):
+        with mock.patch('json.loads', new=lambda *args: {'versions': {'9999': {}}}):
+            try:
+                dukpy.install_jspackage('react', '9999', self.tmpdir)
+            except Exception as e:
+                assert 'Unable to detect a supported download url' in str(e), str(e)
+                raise
 
 
 TEST_CODE = '''
