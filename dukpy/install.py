@@ -20,13 +20,18 @@ def main():
     args = sys.argv[1:]
     try:
         package_name = args[0]
-        version = args[1]
     except:
         print('Usage: dukpy-install package_name version')
         print('')
-        print('Downloads a specific package version from npmjs.org. Note this is'
-              'a very basic script that does not support dependencies.')
+        print('Downloads a package from npmjs.org. ')
+        print('Note this is a very basic script that does '
+              'not support dependencies conflict resolution')
         return 1
+
+    try:
+        version = args[1]
+    except:
+        version = None
 
     try:
         dest = args[2]
@@ -52,44 +57,43 @@ def install_jspackage(package_name, version, modulesdir):
     if not version:
         version = ''
 
-    package_info = _fetch_package_info(package_name)
-    package_versions = package_info['versions']
-    matching_version = _resolve_version(version, package_versions)
-    version_info = package_versions.get(matching_version)
-    if version_info is None:
-        raise JSPackageInstallError('Version {0} not found, available versions are {1}'.format(
-            version, ', '.join(sorted(package_versions.keys()))
-        ), error_code=2)
+    requirements = _resolve_dependencies(package_name, version)
+    print('Packages going to be installed: {0}'.format(', '.join(
+        '{0}->{1}'.format(*i) for i in requirements
+    )))
 
-    try:
-        download_url = version_info['dist']['tarball']
-    except KeyError:
-        raise JSPackageInstallError('Unable to detect a supported download url for package',
-                                    error_code=3)
-
-    tarball = BytesIO()
-    print('Downloading {0}'.format(download_url))
-    with closing(urlopen(download_url)) as data:
-        chunk = data.read(1024)
-        while chunk:
-            print('.', end='')
-            tarball.write(chunk)
-            chunk = data.read(1024)
-    print('')
-
-    tarball.seek(0)
-    print('Extracting... ')
-    with closing(tarfile.open(fileobj=tarball)) as tb:
-        dest = os.path.join(modulesdir, version_info['name'])
-        tmpdir = tempfile.mkdtemp()
+    downloads = {}
+    for dependency_name, _, version_info in requirements:
         try:
-            tb.extractall(tmpdir)
-            shutil.move(os.path.join(tmpdir, 'package'),
-                        os.path.abspath(dest))
-        finally:
-            shutil.rmtree(tmpdir)
+            downloads[dependency_name] = version_info['dist']['tarball']
+        except KeyError:
+            raise JSPackageInstallError('Unable to detect a supported download url for package',
+                                        error_code=3)
 
-    print('Installed in {0}'.format(dest))
+    for dependency_name, download_url in downloads.items():
+        tarball = BytesIO()
+        print('Fetching {0}'.format(download_url), end='')
+        with closing(urlopen(download_url)) as data:
+            chunk = data.read(1024)
+            while chunk:
+                print('.', end='')
+                tarball.write(chunk)
+                chunk = data.read(1024)
+        print('')
+
+        tarball.seek(0)
+        with closing(tarfile.open(fileobj=tarball)) as tb:
+            dest = os.path.join(modulesdir, dependency_name)
+            tmpdir = tempfile.mkdtemp()
+            try:
+                tb.extractall(tmpdir)
+                shutil.rmtree(os.path.abspath(dest), ignore_errors=True)
+                shutil.move(os.path.join(tmpdir, 'package'),
+                            os.path.abspath(dest))
+            finally:
+                shutil.rmtree(tmpdir)
+
+    print('Installing {0} Done!'.format(package_name))
 
 
 def _resolve_version(version, versions):
@@ -103,6 +107,26 @@ def _fetch_package_info(package_name):
     url = 'http://registry.npmjs.org/{0}'
     with closing(urlopen(url.format(package_name))) as data:
         return json.loads(data.read().decode('utf-8'))
+
+
+def _resolve_dependencies(package_name, version):
+    package_info = _fetch_package_info(package_name)
+    package_versions = package_info['versions']
+    matching_version = _resolve_version(version, package_versions)
+    version_info = package_versions.get(matching_version)
+    if version_info is None:
+        raise JSPackageInstallError('Version {0} not found, available versions are {1}'.format(
+            version, ', '.join(sorted(package_versions.keys()))
+        ), error_code=2)
+
+    requirements = [(package_name, matching_version, version_info)]
+    dependencies = version_info.get('dependencies', {})
+    if dependencies:
+        for dependency, dependency_version in dependencies.items():
+            requirements.extend(
+                _resolve_dependencies(dependency, dependency_version)
+            )
+    return requirements
 
 
 class JSPackageInstallError(Exception):
