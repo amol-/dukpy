@@ -237,9 +237,10 @@ Loading modukes with require
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using the ``dukpy.JSInterpreter`` object it is possible to use
-the `require('modulename')` instruction to load a module inside javascript.
+the ``require('modulename')`` instruction to load a module inside javascript.
 
-Modules are looked up in all directories registered with `dukpy.JSInterpreter.loader.register_path`:
+Modules are looked up in all directories registered with
+``dukpy.JSInterpreter.loader.register_path``:
 
 .. code:: python
 
@@ -253,7 +254,7 @@ Installing packages from npmjs.org
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using the persistent javascript interpreter it is also possible to install packages
-from *npmjs.org* through the `dukpy.install_jspackage` function:
+from *npmjs.org* through the ``dukpy.install_jspackage`` function:
 
 .. code:: python
 
@@ -265,7 +266,7 @@ from *npmjs.org* through the `dukpy.install_jspackage` function:
     Fetching https://registry.npmjs.org/asap/-/asap-2.0.3.tgz............
     Installing promise in ./js_modules Done!
 
-The same functionality is also provided by the `dukpy-install` shell command::
+The same functionality is also provided by the ``dukpy-install`` shell command::
 
     $ dukpy-install -d ./js_modules promise
     Packages going to be installed: promise->7.1.1, asap->2.0.3
