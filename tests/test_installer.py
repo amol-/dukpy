@@ -32,12 +32,12 @@ class TestPackageInstaller(object):
 
     def test_install_command(self):
         with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8',
-                                             '-d ' + self.tmpdir]):
+                                             '-d', self.tmpdir]):
             dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, 'react'))
 
     def test_install_command_latest_ver(self):
-        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '-d ' + self.tmpdir]):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '-d', self.tmpdir]):
             dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, 'react'))
 
@@ -56,7 +56,7 @@ class TestPackageInstaller(object):
 
     def test_install_command_substrate_error(self):
         with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '9999',
-                                             '-d ' + self.tmpdir]):
+                                             '-d', self.tmpdir]):
             assert dukpy_install.main() == 2
 
     def test_install_unexisting_package(self):

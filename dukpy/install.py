@@ -23,7 +23,7 @@ def main():
                         help='name of the package to install')
     parser.add_argument('version', nargs='?',
                         help='Version of the package (omit for latest)')
-    parser.add_argument('-d', '--destination', dest='destination', default='./js_modules',
+    parser.add_argument('--destination', '-d', default='./js_modules',
                         help="directory where to install javascript packages")
     args = parser.parse_args(sys.argv[1:])
 
@@ -82,7 +82,7 @@ def install_jspackage(package_name, version, modulesdir):
             finally:
                 shutil.rmtree(tmpdir)
 
-    print('Installing {0} Done!'.format(package_name))
+    print('Installing {0} in {1} Done!'.format(package_name, modulesdir))
 
 
 def _resolve_version(version, versions):
