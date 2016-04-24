@@ -61,6 +61,10 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     duk_push_c_function(ctx, call_py_function, DUK_VARARGS);
     duk_put_global_string(ctx, "call_python");
 
+    /* Add a _require_set_module_id which allows replacing id of loaded modules */
+    duk_push_c_function(ctx, require_set_module_id, 2);
+    duk_put_global_string(ctx, "_require_set_module_id");
+
     int res = duk_peval_string(ctx, command);
     if (res != 0) {
         duk_get_prop_string(ctx, -1, "stack");

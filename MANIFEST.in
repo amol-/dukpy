@@ -1,1 +1,2 @@
-include duktape/*.h
+recursive-include src *.h
+recursive-include dukpy/jsmodules *.js

@@ -111,3 +111,12 @@ int call_py_function(duk_context *ctx) {
     Py_XDECREF(ret);
     return 1;
 }
+
+
+int require_set_module_id(duk_context *ctx) {
+    duk_push_string(ctx, "id");
+    duk_swap(ctx, -1, -2);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE|DUK_DEFPROP_FORCE);
+    duk_pop(ctx);
+    return 0;
+}

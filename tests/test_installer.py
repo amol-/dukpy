@@ -22,7 +22,6 @@ class TestPackageInstaller(object):
     def test_install_react(self):
         dukpy.install_jspackage('react', '0.14.8', self.tmpdir)
         dukpy.install_jspackage('react-dom', '0.14.8', self.tmpdir)
-        dukpy.install_jspackage('fbjs', '0.8.0', self.tmpdir)
 
         jsx = dukpy.jsx_compile(TEST_CODE)
 
@@ -108,7 +107,7 @@ class TestVersionResolver(object):
 
 
 TEST_CODE = '''
-var React = require('react/react'),
+var React = require('react'),
  ReactDOM = require('react-dom/server');
 
 var HelloWorld = React.createClass({

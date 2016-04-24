@@ -93,9 +93,10 @@ class JSInterpreter(object):
         self.evaljs("""
         ;Duktape.modSearch = function (id, require, exports, module) {
             var m = call_python('dukpy.lookup_module', id);
-            if (!m)
+            if (!m || !m[1]) {
                 throw new Error('cannot find module: ' + id);
-            module.filename = m[0];
+            }
+            _require_set_module_id(require, m[0]);
             return m[1];
         };
 """)

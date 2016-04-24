@@ -7,6 +7,7 @@ void duktape_fatal_error_handler(duk_context *ctx, duk_errcode_t code, const cha
 duk_context *get_context_from_capsule(PyObject* pyctx);
 PyObject *make_capsule_for_context(duk_context *ctx);
 int call_py_function(duk_context *ctx);
+int require_set_module_id(duk_context *ctx);
 
 #if PY_MAJOR_VERSION >= 3
 #define CONDITIONAL_PY3(three, two) (three)
