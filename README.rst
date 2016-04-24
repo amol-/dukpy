@@ -233,3 +233,45 @@ and multiple ``eval`` calls will share the same interpreter and global status:
     >>> interpreter.evaljs("o.value += 1; o")
     {u'value': 6}
 
+Loading modukes with require
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the ``dukpy.JSInterpreter`` object it is possible to use
+the `require('modulename')` instruction to load a module inside javascript.
+
+Modules are looked up in all directories registered with `dukpy.JSInterpreter.loader.register_path`:
+
+.. code:: python
+
+    >>> import dukpy
+    >>> jsi = dukpy.JSInterpreter()
+    >>> jsi.loader.register_path('./js_modules')
+    >>> jsi.evaljs("isEmpty = require('fbjs/lib/isEmpty'); isEmpty([1])")
+    False
+
+Installing packages from npmjs.org
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the persistent javascript interpreter it is also possible to install packages
+from *npmjs.org* through the `dukpy.install_jspackage` function:
+
+.. code:: python
+
+    >>> import dukpy
+    >>> jsi = dukpy.JSInterpreter()
+    >>> dukpy.install_jspackage('promise', None, './js_modules')
+    Packages going to be installed: promise->7.1.1, asap->2.0.3
+    Fetching https://registry.npmjs.org/promise/-/promise-7.1.1.tgz..........................
+    Fetching https://registry.npmjs.org/asap/-/asap-2.0.3.tgz............
+    Installing promise in ./js_modules Done!
+
+The same functionality is also provided by the `dukpy-install` shell command::
+
+    $ dukpy-install -d ./js_modules promise
+    Packages going to be installed: promise->7.1.1, asap->2.0.3
+    Fetching https://registry.npmjs.org/promise/-/promise-7.1.1.tgz..........................
+    Fetching https://registry.npmjs.org/asap/-/asap-2.0.3.tgz............
+    Installing promise in ./js_modules Done!
+
+Please note that currently `install_jspackage` is not able to resolve conflicting
+dependencies.

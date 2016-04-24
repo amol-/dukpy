@@ -1,3 +1,5 @@
+from dukpy._dukpy import JSRuntimeError
+
 import dukpy
 from diffreport import report_diff
 
@@ -30,3 +32,13 @@ class TestJSInterpreter(object):
 
 var i = 5;'''
         assert res == expected, report_diff(expected, res)
+
+    def test_module_loader_unexisting(self):
+        interpreter = dukpy.JSInterpreter()
+
+        try:
+            interpreter.evaljs("require('missing_module');")
+        except JSRuntimeError as e:
+            assert 'cannot find module: missing_module' in str(e)
+        else:
+            assert False, 'should have raised'
