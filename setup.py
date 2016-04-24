@@ -1,11 +1,18 @@
 import os
 from distutils.core import setup, Extension
 
+import sys
+py_version = sys.version_info[:2]
+
 HERE = os.path.abspath(os.path.dirname(__file__))
 try:
     README = open(os.path.join(HERE, 'README.rst')).read()
 except IOError:
     README = ''
+
+INSTALL_REQUIRES = []
+if py_version == (2, 6):
+    INSTALL_REQUIRES.append('argparse')
 
 duktape = Extension('dukpy._dukpy',
                     define_macros=[('DUK_OPT_DEEP_C_STACK', '1'),
@@ -28,6 +35,7 @@ setup(
     license='MIT',
     packages=['dukpy', 'dukpy.webassets'],
     ext_modules=[duktape],
+    install_requires=INSTALL_REQUIRES,
     package_data={
         'dukpy': ['*.js'],
     },

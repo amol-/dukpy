@@ -31,13 +31,20 @@ class TestPackageInstaller(object):
         assert res == '<div class="helloworld">Hello Alessandro</div>', res
 
     def test_install_command(self):
-        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8', self.tmpdir]):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8',
+                                             '-d ' + self.tmpdir]):
             dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, 'react'))
 
+    def test_install_command_latest_ver(self):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '-d ' + self.tmpdir]):
+            dukpy_install.main()
+        assert os.path.exists(os.path.join(self.tmpdir, 'react'))
+
+    @raises(SystemExit)
     def test_install_command_missing_args(self):
         with mock.patch.object(sys, 'argv', ['dukpy-install']):
-            assert dukpy_install.main() == 1
+            dukpy_install.main()
 
     def test_install_command_without_dest(self):
         if os.path.exists('./js_modules'):
@@ -48,7 +55,8 @@ class TestPackageInstaller(object):
         assert os.path.exists(os.path.join('./js_modules', 'react'))
 
     def test_install_command_substrate_error(self):
-        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '9999', self.tmpdir]):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '9999',
+                                             '-d ' + self.tmpdir]):
             assert dukpy_install.main() == 2
 
     def test_install_unexisting_package(self):

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+import argparse
 import json
 import os
 import sys
@@ -17,29 +18,17 @@ except ImportError:
 
 
 def main():
-    args = sys.argv[1:]
-    try:
-        package_name = args[0]
-    except:
-        print('Usage: dukpy-install package_name version')
-        print('')
-        print('Downloads a package from npmjs.org. ')
-        print('Note this is a very basic script that does '
-              'not support dependencies conflict resolution')
-        return 1
+    parser = argparse.ArgumentParser(description='Install a Javascript Package from npmjs.org')
+    parser.add_argument('package_name',
+                        help='name of the package to install')
+    parser.add_argument('version', nargs='?',
+                        help='Version of the package (omit for latest)')
+    parser.add_argument('-d', '--destination', dest='destination', default='./js_modules',
+                        help="directory where to install javascript packages")
+    args = parser.parse_args(sys.argv[1:])
 
     try:
-        version = args[1]
-    except:
-        version = None
-
-    try:
-        dest = args[2]
-    except:
-        dest = './js_modules'
-
-    try:
-        return install_jspackage(package_name, version, dest)
+        return install_jspackage(args.package_name, args.version, args.destination)
     except JSPackageInstallError as e:
         print(e)
         return e.error_code
