@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 from distutils.core import setup, Extension
 
@@ -37,7 +38,7 @@ setup(
     ext_modules=[duktape],
     install_requires=INSTALL_REQUIRES,
     package_data={
-        'dukpy': ['*.js'],
+        'dukpy': ['jsmodules/*.js', 'jsmodules/react/*.js'],
     },
     classifiers=[
         'Development Status :: 3 - Alpha',
