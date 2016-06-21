@@ -10,9 +10,6 @@ dukpy
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
    :target: https://pypi.python.org/pypi/dukpy
 
-.. image:: https://img.shields.io/pypi/dm/dukpy.svg
-   :target: https://pypi.python.org/pypi/dukpy
-
 
 DukPy is a simple javascript interpreter for Python built on top of
 duktape engine **without any external dependency**.
