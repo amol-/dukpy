@@ -80,3 +80,19 @@ var greeter = new Greeter("Hello, world!");
 var react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);"""
 
         assert expected == ans, report_diff(expected, ans)
+
+    def test_jsx6(self):
+        ans = dukpy.jsx_compile('''
+import Component from 'react';
+
+class HelloWorld extends Component {
+  render() {
+    return (
+      <div className="helloworld">
+        Hello {this.props.data.name}
+      </div>
+    );
+  }
+}
+''')
+        assert '_createClass(HelloWorld,' in ans, ans

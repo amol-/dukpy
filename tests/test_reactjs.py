@@ -46,3 +46,24 @@ ReactDOM.renderToStaticMarkup(<HelloWorld data={dukpy.data}/>, null);
         jsx = dukpy.jsx_compile(code)
         res = dukpy.evaljs(jsx, data={'id': 1, 'name': "Alessandro"})
         assert res == '<div class="helloworld">Hello Alessandro</div>', res
+
+    def test_jsx6(self):
+        code = '''
+import React from 'react/react';
+var ReactDOM = require('react/react-dom-server');
+
+class HelloWorld extends React.Component {
+  render() {
+    return (
+      <div className="helloworld">
+        Hello {this.props.data.name}
+      </div>
+    );
+  }
+}
+
+ReactDOM.renderToStaticMarkup(<HelloWorld data={dukpy.data}/>, null);
+'''
+        jsx = dukpy.jsx_compile(code)
+        res = dukpy.evaljs(jsx, data={'id': 1, 'name': "Alessandro"})
+        assert res == '<div class="helloworld">Hello Alessandro</div>', res
