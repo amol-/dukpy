@@ -38,7 +38,8 @@ setup(
     ext_modules=[duktape],
     install_requires=INSTALL_REQUIRES,
     package_data={
-        'dukpy': ['jsmodules/*.js', 'jsmodules/react/*.js'],
+        'dukpy': ['jsmodules/*.js', 'jsmodules/react/*.js',
+                  'jsmodules/less/*/*.js', 'jsmodules/less/*/*/*.js'],
     },
     classifiers=[
         'Development Status :: 3 - Alpha',
