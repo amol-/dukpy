@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import os
 import dukpy
 from diffreport import report_diff
+from dukpy.lessc import LessCompilerError
 
 
 class TestTranspilers(object):
@@ -96,3 +98,40 @@ class HelloWorld extends Component {
 }
 ''')
         assert '_createClass(HelloWorld,' in ans, ans
+
+    def test_less(self):
+        ans = dukpy.less_compile('''
+@import "files/colors.less";
+
+.box-shadow(@style, @c) when (iscolor(@c)) {
+  -webkit-box-shadow: @style @c;
+  box-shadow:         @style @c;
+}
+.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+  .box-shadow(@style, rgba(0, 0, 0, @alpha));
+}
+.box {
+  color: saturate(@green, 5%);
+  border-color: lighten(@green, 30%);
+  div { .box-shadow(0 0 5px, 30%) }
+}
+''', options={'paths': [os.path.dirname(__file__)]})
+
+        expected = '''box {
+  color: #7cb029;
+  border-color: #c2e191;
+}
+.box div {
+  -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}'''
+
+        assert expected in ans, report_diff(expected, ans)
+
+    def test_less_errors(self):
+        try:
+            dukpy.less_compile('@import "files/missing.less";')
+        except LessCompilerError as e:
+            assert "files/missing.less' wasn't found." in str(e)
+        else:
+            assert False, 'Exception not raised'
