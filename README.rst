@@ -242,7 +242,7 @@ and multiple ``eval`` calls will share the same interpreter and global status:
     >>> interpreter.evaljs("o.value += 1; o")
     {u'value': 6}
 
-Loading modukes with require
+Loading modules with require
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using the ``dukpy.JSInterpreter`` object it is possible to use
