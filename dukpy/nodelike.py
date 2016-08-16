@@ -4,6 +4,7 @@ from .evaljs import JSInterpreter
 
 
 class NodeLikeInterpreter(JSInterpreter):
+    """A DukPy Interpreter that provides a minimal compatibility layer with NodeJS"""
     def __init__(self):
         super(NodeLikeInterpreter, self).__init__()
         self.loader.register_path(os.path.join(os.path.dirname(__file__), 'jscore'))
@@ -12,6 +13,7 @@ class NodeLikeInterpreter(JSInterpreter):
 
 
 class FS:
+    """Provides oversimplified fs.js native functions."""
     @classmethod
     def exists(cls, filepath):
         try:

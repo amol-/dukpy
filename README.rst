@@ -19,6 +19,7 @@ It comes with a bunch of common transpilers built-in for convenience:
     - *BabelJS*
     - *TypeScript*
     - *JSX*
+    - *LESS*
 
 Dukpy has been tested on **Python 2.7** and **Python 3.4**, dukpy
 is currently not production ready and might actually crash your
@@ -138,6 +139,17 @@ DukPy provides a built-in compiler from JSX to React, this is available as
     >>> dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
     u'"use strict";\n\nvar react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);'
 
+Less Transpiling
+----------------
+
+DukPy provides a built-in distribution of the less compiler available
+through `dukpy.less_compile`:
+
+.. code:: python
+
+    >>> import dukpy
+    >>> dukpy.less_compile('.class { width: (1 + 1) }')
+    '.class {\n  width: 2;\n}\n'
 
 Using the JavaScript Interpreter
 --------------------------------
