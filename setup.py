@@ -52,7 +52,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'dukpy-install = dukpy.install:main'
+            'dukpy-install = dukpy.install:main',
+            'dukpy = dukpy.run:main'
         ]
     }
 )
