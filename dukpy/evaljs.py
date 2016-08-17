@@ -1,6 +1,7 @@
 from __future__ import print_function
 import json
 import os
+import logging
 
 from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
@@ -15,6 +16,9 @@ try:  # pragma: no cover
     string_types = (str, unicode)
 except NameError:  # pragma: no cover
     string_types = (bytes, str)
+
+
+log = logging.getLogger('dukpy.interpreter')
 
 
 class JSInterpreter(object):
@@ -79,11 +83,22 @@ class JSInterpreter(object):
         self.evaljs("process = {}; process.env = dukpy.environ", environ=dict(os.environ))
 
     def _init_console(self):
-        self.export_function('dukpy.print', print)
+        self.export_function('dukpy.log.info', lambda *args: log.info(' '.join(args)))
+        self.export_function('dukpy.log.error', lambda *args: log.error(' '.join(args)))
+        self.export_function('dukpy.log.warn', lambda *args: log.warn(' '.join(args)))
         self.evaljs("""
         ;console = {
             log: function() {
-                call_python('dukpy.print', Array.prototype.join.call(arguments, ' '));
+                call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
+            },
+            info: function() {
+                call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
+            },
+            warn: function() {
+                call_python('dukpy.log.warn', Array.prototype.join.call(arguments, ' '));
+            },
+            error: function() {
+                call_python('dukpy.log.error', Array.prototype.join.call(arguments, ' '));
             }
         };
         """)

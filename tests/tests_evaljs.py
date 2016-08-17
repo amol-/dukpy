@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import logging
 import os
-
 import dukpy
+import mock
 
 
 class TestEvalJS(object):
@@ -37,3 +38,22 @@ class TestEvalJS(object):
             with open(testfile) as f2:
                 s = dukpy.evaljs([f, f2])
         assert s == 11, s
+
+    def test_logging(self):
+        log = logging.getLogger('dukpy.interpreter')
+
+        with mock.patch.object(log, 'info', return_value=None) as fakelog:
+            dukpy.evaljs('console.log("HI")')
+            assert fakelog.call_count == 1
+
+        with mock.patch.object(log, 'info', return_value=None) as fakelog:
+            dukpy.evaljs('console.info("HI")')
+            assert fakelog.call_count == 1
+
+        with mock.patch.object(log, 'error', return_value=None) as fakelog:
+            dukpy.evaljs('console.error("HI")')
+            assert fakelog.call_count == 1
+
+        with mock.patch.object(log, 'warn', return_value=None) as fakelog:
+            dukpy.evaljs('console.warn("HI")')
+            assert fakelog.call_count == 1
