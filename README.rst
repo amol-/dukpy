@@ -139,6 +139,20 @@ DukPy provides a built-in compiler from JSX to React, this is available as
     >>> dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
     u'"use strict";\n\nvar react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);'
 
+The DukPY based JSX compiler also provides a WebAssets (
+http://webassets.readthedocs.org/en/latest/ ) filter to automatically
+compile JSX+ES6 code in your assets pipeline.  You register this filter as
+``babeljsx`` within WebAssets using:
+
+.. code:: python
+
+    from webassets.filter import register_filter
+    from dukpy.webassets import BabelJSX
+
+    register_filter(BabelJSX)
+
+Which makes the filter available with the ``babeljsx`` name.
+
 Less Transpiling
 ----------------
 
@@ -150,6 +164,22 @@ through `dukpy.less_compile`:
     >>> import dukpy
     >>> dukpy.less_compile('.class { width: (1 + 1) }')
     '.class {\n  width: 2;\n}\n'
+
+
+The DukPY based LESS compiler also provides a WebAssets (
+http://webassets.readthedocs.org/en/latest/ ) filter to automatically
+compile LESS code in your assets pipeline.  You register this filter as
+``lessc`` within WebAssets using:
+
+.. code:: python
+
+    from webassets.filter import register_filter
+    from dukpy.webassets import CompileLess
+
+    register_filter(CompileLess)
+
+Which makes the filter available with the ``lessc`` name.
+
 
 Using the JavaScript Interpreter
 --------------------------------

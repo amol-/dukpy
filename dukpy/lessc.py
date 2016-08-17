@@ -5,7 +5,7 @@ def less_compile(source, options=None):
     """Compiles the given ``source`` from LESS to CSS"""
     options = options or {}
     res = NodeLikeInterpreter().evaljs(
-        ('var result = {"error": null, "output": null};'
+        ('var result = null;'
          'var less = require("less/less-node");',
          'less.render(dukpy.lesscode, dukpy.lessoptions, function(error, output) {'
          '  result = {"error": error, "output": output};'
