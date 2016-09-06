@@ -54,6 +54,11 @@ class TestPackageInstaller(object):
             dukpy_install.main()
         assert os.path.exists(os.path.join('./js_modules', 'react'))
 
+    def test_install_scoped_package(self):
+        with mock.patch.object(sys, 'argv', ['dukpy-install', '@reactivex/rxjs', '5.0.0-beta.11']):
+            dukpy_install.main()
+        assert os.path.exists(os.path.join('./js_modules', '@reactivex', 'rxjs'))
+
     def test_install_command_substrate_error(self):
         with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '9999',
                                              '-d', self.tmpdir]):
