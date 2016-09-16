@@ -38,9 +38,9 @@ class Point {
     }
 }
 ''')
-        self.assertIn('''var Point = function () {
+        assert '''var Point = function () {
     function Point(x, y) {
-''', ans['code'])
+''' in ans['code'], ans['code']
 
     def test_typescript(self):
         ans = dukpy.typescript_compile('''
