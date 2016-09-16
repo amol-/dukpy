@@ -26,10 +26,10 @@ duktape = Extension('dukpy._dukpy',
 
 setup(
     name='dukpy',
-    version='0.0.4',
+    version='0.0.5',
     description='Simple JavaScript interpreter for Python',
     long_description=README,
-    keywords='javascript compiler babeljs coffeescript typescript',
+    keywords='javascript compiler babeljs jsx coffeescript typescript',
     author='Alessandro Molina',
     author_email='alessandro.molina@axant.it',
     url='https://github.com/amol-/dukpy',
