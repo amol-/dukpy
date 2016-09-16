@@ -13,8 +13,10 @@ from .evaljs import evaljs
 
 try:
     from urllib.request import urlopen
+    from urllib.parse import quote_plus
 except ImportError:
     from urllib2 import urlopen
+    from urllib import quote_plus
 
 
 def main():
@@ -99,7 +101,7 @@ def _fetch_package_info(package_name):
 
 
 def _resolve_dependencies(package_name, version):
-    package_info = _fetch_package_info(package_name)
+    package_info = _fetch_package_info(quote_plus(package_name, safe='@'))
     package_versions = package_info['versions']
     matching_version = _resolve_version(version, package_versions)
     version_info = package_versions.get(matching_version)
