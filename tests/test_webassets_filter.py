@@ -30,7 +30,7 @@ class Point {
         out.seek(0)
         ans = out.read()
 
-        assert '''var Point = (function () {
+        assert '''var Point = function () {
     function Point(x, y) {
 ''' in ans, ans
         
@@ -134,3 +134,11 @@ class HelloWorld extends Component {
         self.create_files({'in': self.JSX_CODE})
         self.mkbundle('in', filters='babeljsx', output='out').build()
         assert '_createClass(HelloWorld, ' in self.get('out')
+        assert 'require' in self.get('out')
+
+    def test_jsx_options(self):
+        self.create_files({'in': self.JSX_CODE})
+        self.mkbundle('in', filters='babeljsx', output='out', config={
+            'babel_modules_loader': 'systemjs'
+        }).build()
+        assert 'System.register(["react"]' in self.get('out')

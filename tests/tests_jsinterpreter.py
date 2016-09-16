@@ -24,7 +24,7 @@ class TestJSInterpreter(object):
     def test_module_loader(self):
         interpreter = dukpy.JSInterpreter()
         res = interpreter.evaljs('''
-    babel = require('babel-6.4.4.min');
+    babel = require('babel-6.14.0.min');
     babel.transform(dukpy.es6code, {presets: ["es2015"]}).code;
 ''', es6code='let i=5;')
 

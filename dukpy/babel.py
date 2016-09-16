@@ -1,7 +1,7 @@
 import os
 from .evaljs import evaljs
 
-BABEL_COMPILER = os.path.join(os.path.dirname(__file__), 'jsmodules', 'babel-6.4.4.min.js')
+BABEL_COMPILER = os.path.join(os.path.dirname(__file__), 'jsmodules', 'babel-6.14.0.min.js')
 
 
 def babel_compile(source, **kwargs):
@@ -20,8 +20,6 @@ def babel_compile(source, **kwargs):
         )
 
 
-def jsx_compile(source, mode='react'):
-    modes = {
-        'react': ["transform-react-jsx"]
-    }
-    return babel_compile(source, plugins=modes.get(mode, []))['code']
+def jsx_compile(source, **kwargs):
+    kwargs['presets'] = ['es2015', 'react']
+    return babel_compile(source, **kwargs)['code']

@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import os
 
-from webassets.filter import Filter
+from webassets.filter import Filter, option
 
 import dukpy
 
@@ -14,9 +14,9 @@ __all__ = ('CompileLess', )
 class CompileLess(Filter):
     name = 'lessc'
     max_debug_level = None
-
-    def setup(self):
-        self.less_includes = self.get_config('LIBSASS_INCLUDES', require=False) or None
+    options = {
+        'less_includes': option('LIBSASS_INCLUDES', type=list)
+    }
 
     def input(self, _in, out, **kw):
         options = {'paths': []}

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+from unittest import TestCase
+
 import dukpy
 from diffreport import report_diff
 from dukpy.lessc import LessCompilerError
 
 
-class TestTranspilers(object):
+class TestTranspilers(TestCase):
     def test_coffee(self):
         ans = dukpy.coffee_compile('''
     fill = (container, liquid = "coffee") ->
@@ -36,9 +38,9 @@ class Point {
     }
 }
 ''')
-        assert '''var Point = (function () {
+        self.assertIn('''var Point = function () {
     function Point(x, y) {
-''' in ans['code'], ans['code']
+''', ans['code'])
 
     def test_typescript(self):
         ans = dukpy.typescript_compile('''

@@ -11,6 +11,9 @@ __all__ = ('BabelJS', )
 class BabelJS(Filter):
     name = 'babeljs'
     max_debug_level = None
+    options = {
+        'loader': 'BABEL_MODULES_LOADER'
+    }
 
     def input(self, _in, out, **kw):
         src = dukpy.babel_compile(_in.read())
