@@ -121,6 +121,8 @@ compile ES6 code in your assets pipeline.  You register this filter as
     register_filter(BabelJS)
 
 Which makes the filter available with the ``babeljs`` name.
+Only supported filter option is currently `BABEL_MODULES_LOADER = 'systemjs'` to
+specify that compiled code should use SystemJS instead of CommonJS for modules.
 
 **NOTE:** When using the BabelJS compiler for code that needs to run
 in the browser, make sure to add
@@ -152,6 +154,7 @@ compile JSX+ES6 code in your assets pipeline.  You register this filter as
     register_filter(BabelJSX)
 
 Which makes the filter available with the ``babeljsx`` name.
+This filter supports the same options as the babel one.
 
 Less Transpiling
 ----------------
