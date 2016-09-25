@@ -26,7 +26,7 @@ duktape = Extension('dukpy._dukpy',
 
 setup(
     name='dukpy',
-    version='0.0.5',
+    version='0.0.6',
     description='Simple JavaScript interpreter for Python',
     long_description=README,
     keywords='javascript compiler babeljs jsx coffeescript typescript',
