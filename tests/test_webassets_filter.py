@@ -10,9 +10,15 @@ except:
     from StringIO import StringIO
 
 
-class TestAssetsFilters(object):
+class TestAssetsFilters(TempEnvironmentHelper):
+    @classmethod
+    def setup_class(cls):
+        from webassets.filter import register_filter
+        register_filter(BabelJS)
+        register_filter(TypeScript)
+
     def test_babeljs_filter(self):
-        es6source = StringIO('''
+        ES6CODE = '''
 class Point {
     constructor(x, y) {
         this.x = x;
@@ -22,20 +28,17 @@ class Point {
         return '(' + this.x + ', ' + this.y + ')';
     }
 }
-''')
-
-        out = StringIO()
-        BabelJS().input(es6source, out)
-        
-        out.seek(0)
-        ans = out.read()
+'''
+        self.create_files({'in': ES6CODE})
+        self.mkbundle('in', filters='babeljs', output='out').build()
+        ans = self.get('out')
 
         assert '''var Point = function () {
     function Point(x, y) {
 ''' in ans, ans
         
     def test_typescript_filter(self):
-        typeScript_source = StringIO('''
+        typeScript_source = '''
 class Greeter {
     constructor(public greeting: string) { }
     greet() {
@@ -43,13 +46,12 @@ class Greeter {
     }
 };
 var greeter = new Greeter("Hello, world!");
-''')
-        out = StringIO()
-        TypeScript().input(typeScript_source, out)
-        
-        out.seek(0)
-        ans = out.read()
-        
+'''
+
+        self.create_files({'in': typeScript_source})
+        self.mkbundle('in', filters='typescript', output='out').build()
+        ans = self.get('out')
+
         expected = """System.register([], function(exports_1) {
     var Greeter, greeter;
     return {
@@ -109,6 +111,7 @@ class TestLessFilter(TempEnvironmentHelper):
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
 }
 """
+
 
 class TestJSXFilter(TempEnvironmentHelper):
     JSX_CODE = '''

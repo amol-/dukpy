@@ -121,12 +121,13 @@ compile ES6 code in your assets pipeline.  You register this filter as
     register_filter(BabelJS)
 
 Which makes the filter available with the ``babeljs`` name.
-Only supported filter option is currently `BABEL_MODULES_LOADER = 'systemjs'` to
-specify that compiled code should use SystemJS instead of CommonJS for modules.
+Only supported filter option is currently `BABEL_MODULES_LOADER` with value
+``systemjs`` or ``umd`` to specify that compiled code should use SystemJS
+or UMD instead of CommonJS for modules.
 
 **NOTE:** When using the BabelJS compiler for code that needs to run
 in the browser, make sure to add
-https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.6.1/polyfill.min.js
+https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.13.0/polyfill.min.js
 dependency.
 
 JSX to React Transpiling
