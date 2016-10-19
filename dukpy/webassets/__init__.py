@@ -4,3 +4,4 @@ from .babilifilter import BabiliJS
 from .typescriptfilter import TypeScript
 from .lessfilter import CompileLess
 from .jsxfilter import BabelJSX
+from .rollupfilter import RollupJS
