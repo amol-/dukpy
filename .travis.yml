@@ -8,8 +8,7 @@ python:
 - 3.6
 
 install:
-- travis_retry pip install nose coveralls webassets mock
-- travis_retry pip install --pre -e .
+- travis_retry pip install --pre -e .[testing,webassets]
 
 script:
 - nosetests -v --with-coverage --cover-package=dukpy --cover-erase

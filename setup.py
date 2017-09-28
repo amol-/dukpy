@@ -37,6 +37,16 @@ setup(
     packages=['dukpy', 'dukpy.webassets'],
     ext_modules=[duktape],
     install_requires=INSTALL_REQUIRES,
+    extras_require={
+        'testing': [
+            'coveralls',
+            'nose',
+            'mock',
+        ],
+        'webassets': [
+            'webassets',
+        ],
+    },
     package_data={
         'dukpy': ['jscore/*.js', 'jsmodules/*.js', 'jsmodules/react/*.js',
                   'jsmodules/less/*/*.js', 'jsmodules/less/*/*/*.js'],
