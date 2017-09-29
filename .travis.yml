@@ -18,7 +18,9 @@ install:
 
 script:
 - nosetests -v --with-coverage --cover-package=dukpy --cover-erase
-- python setup.py check -rm
+- if python -c "import sys; sys.exit(sys.version_info < (2,7))"; then
+      python setup.py check -rm;
+  fi
 - if python -c "import sys; sys.exit(sys.version_info < (3,6))"; then
       python setup.py check -s;
   fi
