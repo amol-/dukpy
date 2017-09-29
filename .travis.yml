@@ -20,3 +20,8 @@ script:
 
 after_success:
 - coveralls
+
+stages:
+- test
+- name: deploy
+  if: tag IS present
