@@ -28,6 +28,7 @@ stages:
   if: tag IS present
 
 jobs:
+  fast_finish: true
   allow_failures:
   - python: nightly
   include:
