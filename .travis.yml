@@ -11,6 +11,7 @@ python:
 - 3.4
 - 3.5
 - &mainstream_python 3.6
+- nightly
 
 install:
 - travis_retry pip install --pre -e .[testing,webassets]
@@ -27,6 +28,8 @@ stages:
   if: tag IS present
 
 jobs:
+  allow_failures:
+  - python: nightly
   include:
   - stage: deploy
     python: *mainstream_python
