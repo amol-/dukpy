@@ -41,9 +41,25 @@ jobs:
   - stage: deploy
     python: *mainstream_python
     install: skip
-    script: skip
+    services:
+    - docker
+    script:
+    - mkdir dist  # so that it whould have priviliges of the current Travis user
+    - .github/run-docker.sh "dukpy"
     deploy:
       provider: pypi
+      # `skip_cleanup: true` is required to preserve binary wheels, built
+      # inside of manylinux1 docker container during `script` step above.
+      skip_cleanup: true
+      # Although Travis CI instructs `setup.py` to build source distribution,
+      # which is default value for distribution option (`distribution: sdist`),
+      # it will also upload all wheels we've previously built in manylinux1
+      # docker container using `twine upload -r pypi dist/*` command.
+      # Also since commit https://github.com/travis-ci/dpl/commit/90b5e39
+      # it is default that Travis PYPI provider has `skip_upload_docs: true`
+      # set by default.
+      # Besides above, we don't do cleanup of `dist/*`, because it's being done
+      # by Travis CI PYPI deployment provider after upload, unconditionally.
       on:
         tags: true
         all_branches: true
