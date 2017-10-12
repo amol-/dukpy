@@ -1,20 +1,54 @@
+os: linux
+dist: trusty
+sudo: false
+group: edge
+
 language: python
 python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
+- 2.6
+- 2.7
+- 3.3
+- 3.4
+- 3.5
+- &mainstream_python 3.6
+- nightly
 
 install:
-  - "travis_retry pip install nose"
-  - "travis_retry pip install coveralls"
-  - "travis_retry pip install webassets"
-  - "travis_retry pip install mock"
-  - "travis_retry pip install --pre -e ."
+- travis_retry pip install --pre -e .[testing,webassets]
 
-script: "nosetests -v --with-coverage --cover-package=dukpy --cover-erase"
+script:
+- nosetests -v --with-coverage --cover-package=dukpy --cover-erase
+- if python -c "import sys; sys.exit(sys.version_info < (2,7))"; then
+      python setup.py check -rm;
+  fi
+- if python -c "import sys; sys.exit(sys.version_info < (3,6))"; then
+      python setup.py check -s;
+  fi
 
 after_success:
-  coveralls
+- coveralls
+
+stages:
+- test
+- name: deploy
+  if: tag IS present
+
+jobs:
+  fast_finish: true
+  allow_failures:
+  - python: nightly
+  include:
+  - stage: deploy
+    python: *mainstream_python
+    install: skip
+    script: skip
+    deploy:
+      provider: pypi
+      on:
+        tags: true
+        all_branches: true
+      user: amol-
+      # just source dist, because binary wheel requires extra work
+      distributions: sdist
+      password:
+        secure: g8mh+wysPGF9VaxHsP/FYjjw+CJ8TJpRKRVQIAi7DRy3yn05lsvfwqHBvKMIOZV26JmI8vxiwCPt0IcsBONzRrKuVp0nS0yXLmaaHH2SIOhZaYLknm1eD9AV7T79Z0uWG7ygFXoCCvkJGiOjZkfrakwYVqvIg9tFCvukJaWLHl8=
