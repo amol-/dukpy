@@ -64,7 +64,7 @@ jobs:
         tags: true
         all_branches: true
       user: amol-
-      # just source dist, because binary wheel requires extra work
+      # just source dist, because binary wheels are built within docker
       distributions: sdist
       password:
         secure: g8mh+wysPGF9VaxHsP/FYjjw+CJ8TJpRKRVQIAi7DRy3yn05lsvfwqHBvKMIOZV26JmI8vxiwCPt0IcsBONzRrKuVp0nS0yXLmaaHH2SIOhZaYLknm1eD9AV7T79Z0uWG7ygFXoCCvkJGiOjZkfrakwYVqvIg9tFCvukJaWLHl8=
