@@ -1,4 +1,11 @@
 #!/bin/bash
+if [ -n "$DEBUG" ]
+then
+  set -x
+fi
+set -euo pipefail
+# ref: https://coderwall.com/p/fkfaqq/safer-bash-scripts-with-set-euxo-pipefail
+
 PYTHON_VERSIONS=`ls /opt/python/`
 
 # Avoid creation of __pycache__/*.py[c|o]
