@@ -44,7 +44,6 @@ jobs:
     services:
     - docker
     script:
-    - mkdir dist  # so that it whould have priviliges of the current Travis user
     - .github/run-docker.sh "dukpy"
     deploy:
       provider: pypi

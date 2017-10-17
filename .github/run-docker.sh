@@ -16,7 +16,8 @@ do
     docker_pull_pids[$arch]=$!
 done
 
-echo Cleanup old dist contents...
+echo Creating dist folder with privileges of host-machine user
+mkdir -p dist  # This is required to be created with host-machine user privileges
 
 for arch in x86_64 i686
 do
