@@ -43,7 +43,7 @@ rm -fv /io/dist/*-linux_*.whl
 echo
 echo
 echo "Cleanup non-$package_name wheels"
-find /io/dist -maxdepth 1 -type f ! -name "$package_name"'-*-manylinux1_'"$arch"'.whl' -delete
+find /io/dist -maxdepth 1 -type f ! -name "$package_name"'-*-manylinux1_'"$arch"'.whl' -print0 | xargs -0 rm -rf
 
 echo
 echo
@@ -53,7 +53,7 @@ ls /io/dist
 
 for PYTHON in ${PYTHON_VERSIONS}; do
     # clear python cache
-    find /io -type d -name __pycache__ -delete
+    find /io -type d -name __pycache__ -print0 | xargs -0 rm -rf
 
     echo
     echo -n "Test $PYTHON: "
