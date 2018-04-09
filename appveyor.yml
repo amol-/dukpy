@@ -76,17 +76,15 @@ install:
 
 build_script:
   # Build the compiled extension
-  - "%CMD_IN_ENV% python setup.py build"
+  - "python setup.py build"
 
 test_script:
   # Run the project tests
-  - "%CMD_IN_ENV% nosetests -v --with-coverage --cover-package=dukpy --cover-erase"
+  - "nosetests -v --with-coverage --cover-package=dukpy --cover-erase"
 
 after_test:
   # If tests are successful, create binary packages for the project.
-  - "%CMD_IN_ENV% python setup.py bdist_wheel"
-  - "%CMD_IN_ENV% python setup.py bdist_wininst"
-  - "%CMD_IN_ENV% python setup.py bdist_msi"
+  - "python setup.py bdist_wheel"
   - ps: "ls dist"
 
 artifacts:
