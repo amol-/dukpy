@@ -83,11 +83,10 @@ int call_py_function(duk_context *ctx) {
     if (ret == NULL) {
         PyObject *error = NULL;
         char const *strerror = "Unknown Error";
-
-        PyObject *ptype, *pvalue, *ptraceback;
+        PyObject *ptype, *pvalue, *ptraceback, *error_repr;
+        
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-
-        PyObject *error_repr = PyObject_Repr(pvalue);
+        error_repr = PyObject_Repr(pvalue);
         if (PyUnicode_Check(error_repr)) {
             error = PyUnicode_AsEncodedString(error_repr, "UTF-8", "replace");
             strerror = PyBytes_AsString(error);
