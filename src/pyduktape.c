@@ -25,19 +25,25 @@ static PyObject *DukPy_create_context(PyObject *self, PyObject *_) {
 
 static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     PyObject *interpreter;
+    PyObject *pyctx;
+    duk_context *ctx;
     const char *command;
     const char *vars;
+    int res;
+    duk_int_t rc;
+    const char *output;
+    PyObject *result;
 
     if (!PyArg_ParseTuple(args, CONDITIONAL_PY3("Oyy", "Oss"), &interpreter, &command, &vars))
         return NULL;
 
-    PyObject *pyctx = PyObject_GetAttrString(interpreter, "_ctx");
+    pyctx = PyObject_GetAttrString(interpreter, "_ctx");
     if (!pyctx) {
         PyErr_SetString(DukPyError, "Missing dukpy interpreter context");
         return NULL;
     }
 
-    duk_context *ctx = get_context_from_capsule(pyctx);
+    ctx = get_context_from_capsule(pyctx);
     if (!ctx) {
         PyErr_SetString(DukPyError, "Invalid dukpy interpreter context");
         return NULL;
@@ -64,7 +70,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     duk_push_c_function(ctx, require_set_module_id, 2);
     duk_put_global_string(ctx, "_require_set_module_id");
 
-    int res = duk_peval_string(ctx, command);
+    res = duk_peval_string(ctx, command);
     if (res != 0) {
         duk_get_prop_string(ctx, -1, "stack");
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
@@ -72,15 +78,15 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    duk_int_t rc = duk_safe_call(ctx, stack_json_encode, 1, 1);
+    rc = duk_safe_call(ctx, stack_json_encode, 1, 1);
     if (rc != DUK_EXEC_SUCCESS) {
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
         duk_pop(ctx);
         return NULL;
     }
 
-    const char *output = duk_get_string(ctx, -1);
-    PyObject *result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
+    output = duk_get_string(ctx, -1);
+    result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
     duk_pop(ctx);
 
     return result;
