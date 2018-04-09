@@ -84,7 +84,7 @@ test_script:
 
 after_test:
   # If tests are successful, create binary packages for the project.
-  - "pip install wheel"
+  - "pip install --upgrade pip setuptools wheel"
   - "python setup.py bdist_wheel"
   - ps: "ls dist"
 
