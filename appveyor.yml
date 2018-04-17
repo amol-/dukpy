@@ -102,13 +102,18 @@ build_script:
 
 test_script:
   # Run the project tests
-  - "%CMD_IN_ENV% nosetests -v --with-coverage --cover-package=dukpy --cover-erase"
+  - "%CMD_IN_ENV% nosetests -v --with-xunit --xunit-file=xunit-test-results.xml --with-coverage --cover-package=dukpy --cover-erase"
 
 after_test:
   # If tests are successful, create binary packages for the project.
   - "%CMD_IN_ENV% pip install --upgrade setuptools wheel"
   - "%CMD_IN_ENV% python setup.py bdist_wheel"
   - ps: "ls dist"
+
+  # This enables AppVeyor UI to list test details:
+  - ps: |
+      $wc = New-Object 'System.Net.WebClient'
+      $wc.UploadFile("https://ci.appveyor.com/api/testresults/xunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\xunit-test-results.xml))
 
 deploy_script:
   - "%CMD_IN_ENV% pip install --upgrade twine"
