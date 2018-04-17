@@ -113,7 +113,7 @@ after_test:
   # This enables AppVeyor UI to list test details:
   - ps: |
       $wc = New-Object 'System.Net.WebClient'
-      $wc.UploadFile("https://ci.appveyor.com/api/testresults/xunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\xunit-test-results.xml))
+      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\xunit-test-results.xml))
 
 deploy_script:
   - "%CMD_IN_ENV% pip install --upgrade twine"
