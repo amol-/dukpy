@@ -5,11 +5,11 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\tests\\run_with_env.cmd"
 
-    PYPI_USERNAME: amol-
+    PYPI_USERNAME: amol
     #  Use the following web UI to encrypt your password:
     #  https://ci.appveyor.com/tools/encrypt
-    #  PYPI_PASSWORD:
-    #    secure: u+K6dKi7+CXXVFEUG4V7zUyV3w7Ntg0Ork/RGVV0eSQ=
+    PYPI_PASSWORD:
+        secure: X7AQy+logua8ux61g3Knhg==
 
   matrix:
 
