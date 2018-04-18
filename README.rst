@@ -8,7 +8,7 @@ dukpy
     :target: https://coveralls.io/r/amol-/dukpy?branch=master
 
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
-   :target: https://pypi.python.org/pypi/dukpy
+   :target: https://pypi.org/p/dukpy
 
 
 DukPy is a simple javascript interpreter for Python built on top of
