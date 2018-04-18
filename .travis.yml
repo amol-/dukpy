@@ -62,7 +62,7 @@ jobs:
       on:
         tags: true
         all_branches: true
-      user: amol-
+      user: amol
       # just source dist, because binary wheels are built within docker
       distributions: sdist
       password:
