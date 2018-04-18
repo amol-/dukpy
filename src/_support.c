@@ -1,4 +1,3 @@
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <Python.h>
@@ -17,11 +16,13 @@ duk_ret_t stack_json_encode(duk_context *ctx) {
 
 
 duk_context *get_context_from_capsule(PyObject* pyctx) {
+    duk_context *ctx = NULL;
+
     if (!PyCapsule_CheckExact(pyctx)) {
         return NULL;
     }
 
-    duk_context *ctx = (duk_context*)PyCapsule_GetPointer(pyctx, CONTEXT_CAPSULE_NAME);
+    ctx = (duk_context*)PyCapsule_GetPointer(pyctx, CONTEXT_CAPSULE_NAME);
     if (!ctx) {
         return NULL;
     }
@@ -50,26 +51,30 @@ PyObject *make_capsule_for_context(duk_context *ctx) {
 
 
 int call_py_function(duk_context *ctx) {
+    char const *args;
+    char const *pyfuncname;
+    int i;
     int args_count = duk_get_top(ctx);
+    PyObject *interpreter;
+    PyObject *ret;
 
     /* Create array to contain all function arguments */
     duk_push_array(ctx);
-    int i;
     for(i=0; i<args_count-1; i++) {
         duk_swap_top(ctx, -2);
         duk_put_prop_index(ctx, -2, i);
     }
-    char const *args = duk_json_encode(ctx, -1);
-    char const *pyfuncname = duk_get_string(ctx, -2);
+    args = duk_json_encode(ctx, -1);
+    pyfuncname = duk_get_string(ctx, -2);
 
     duk_push_global_stash(ctx);
     duk_get_prop_string(ctx, -1, "_py_interpreter");
-    PyObject *interpreter = duk_get_pointer(ctx, -1);
+    interpreter = duk_get_pointer(ctx, -1);
     duk_pop(ctx);
     duk_pop(ctx);
 
-    PyObject *ret = PyObject_CallMethod(interpreter, "_call_python", CONDITIONAL_PY3("yy", "ss"),
-                                        pyfuncname, args);
+    ret = PyObject_CallMethod(interpreter, "_call_python", CONDITIONAL_PY3("yy", "ss"),
+                              pyfuncname, args);
 
     /* Pop array of argumnets and method name */
     duk_pop(ctx);
@@ -78,11 +83,10 @@ int call_py_function(duk_context *ctx) {
     if (ret == NULL) {
         PyObject *error = NULL;
         char const *strerror = "Unknown Error";
-
-        PyObject *ptype, *pvalue, *ptraceback;
+        PyObject *ptype, *pvalue, *ptraceback, *error_repr;
+        
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-
-        PyObject *error_repr = PyObject_Repr(pvalue);
+        error_repr = PyObject_Repr(pvalue);
         if (PyUnicode_Check(error_repr)) {
             error = PyUnicode_AsEncodedString(error_repr, "UTF-8", "replace");
             strerror = PyBytes_AsString(error);

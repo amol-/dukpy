@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 import sys
 py_version = sys.version_info[:2]
