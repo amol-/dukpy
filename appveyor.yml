@@ -115,8 +115,8 @@ after_test:
       $wc = New-Object 'System.Net.WebClient'
       $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit-test-results.xml))
 
-on_success:
-  - "%CMD_IN_ENV% coveralls"
+#on_success:
+  #- "%CMD_IN_ENV% coveralls"
 
 deploy_script:
   - "%CMD_IN_ENV% pip install --upgrade twine"
