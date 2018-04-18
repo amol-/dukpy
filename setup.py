@@ -24,15 +24,25 @@ duktape = Extension('dukpy._dukpy',
                              os.path.join('src','pyduktape.c')],
                     include_dirs=[os.path.join('.', 'src', 'duktape')])
 
+name = 'dukpy'
+repo_slug = 'amol-/{0}'.format(name)
+repo_url = 'https://github.com/{0}'.format(repo_slug)
+
 setup(
-    name='dukpy',
+    name=name,
     version='0.2.0',
     description='Simple JavaScript interpreter for Python',
     long_description=README,
     keywords='javascript compiler babeljs jsx coffeescript typescript',
     author='Alessandro Molina',
     author_email='alessandro.molina@axant.it',
-    url='https://github.com/amol-/dukpy',
+    url=repo_url,
+    project_urls={
+        'CI: AppVeyor': 'https://ci.appveyor.com/project/{0}'.format(repo_slug),
+        'CI: Travis': 'https://travis-ci.org/{0}'.format(repo_slug),
+        'GitHub: issues': '{0}/issues'.format(repo_url),
+        'GitHub: repo': repo_url,
+    },
     license='MIT',
     packages=['dukpy', 'dukpy.webassets'],
     ext_modules=[duktape],
