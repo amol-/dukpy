@@ -1,14 +1,17 @@
 dukpy
 =====
 
-.. image:: https://travis-ci.org/amol-/dukpy.png?branch=master
+.. image:: https://img.shields.io/travis/amol-/dukpy/master.svg?label=Linux%20build%20%40%20Travis%20CI
     :target: https://travis-ci.org/amol-/dukpy
+
+.. image:: https://img.shields.io/appveyor/ci/amol-/dukpy/master.svg?label=Windows%20build%20%40%20Appveyor
+    :target: https://ci.appveyor.com/project/amol-/dukpy
 
 .. image:: https://coveralls.io/repos/amol-/dukpy/badge.png?branch=master
     :target: https://coveralls.io/r/amol-/dukpy?branch=master
 
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
-   :target: https://pypi.python.org/pypi/dukpy
+   :target: https://pypi.org/p/dukpy
 
 
 DukPy is a simple javascript interpreter for Python built on top of
