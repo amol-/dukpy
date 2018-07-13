@@ -1,3 +1,5 @@
+conditions: v1
+
 os: linux
 dist: trusty
 sudo: false
