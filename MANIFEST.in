@@ -1,3 +1,6 @@
 recursive-include src *.h
 recursive-include dukpy/jscore *.js
 recursive-include dukpy/jsmodules *.js
+recursive-include tests *
+
+include LICENSE
