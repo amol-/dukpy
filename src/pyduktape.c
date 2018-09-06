@@ -44,6 +44,8 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     }
 
     ctx = get_context_from_capsule(pyctx);
+    Py_XDECREF(pyctx);
+
     if (!ctx) {
         PyErr_SetString(DukPyError, "Invalid dukpy interpreter context");
         return NULL;
