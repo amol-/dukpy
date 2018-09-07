@@ -44,8 +44,10 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     }
 
     ctx = get_context_from_capsule(pyctx);
+
     if (!ctx) {
         PyErr_SetString(DukPyError, "Invalid dukpy interpreter context");
+        Py_XDECREF(pyctx);
         return NULL;
     }
 
@@ -75,6 +77,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         duk_get_prop_string(ctx, -1, "stack");
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
         duk_pop(ctx);
+        Py_XDECREF(pyctx);
         return NULL;
     }
 
@@ -82,12 +85,14 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     if (rc != DUK_EXEC_SUCCESS) {
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
         duk_pop(ctx);
+        Py_XDECREF(pyctx);
         return NULL;
     }
 
     output = duk_get_string(ctx, -1);
     result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
     duk_pop(ctx);
+    Py_XDECREF(pyctx);
 
     return result;
 }
