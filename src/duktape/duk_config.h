@@ -2338,7 +2338,7 @@ typedef FILE duk_file;
 #endif
 #endif
 
-/* Compiler specific hackery needed to force struct size to match aligment,
+/* Compiler specific hackery needed to force struct size to match alignment,
  * see e.g. duk_hbuffer.h.
  *
  * http://stackoverflow.com/questions/11130109/c-struct-size-alignment

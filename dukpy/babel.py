@@ -5,7 +5,7 @@ BABEL_COMPILER = os.path.join(os.path.dirname(__file__), 'jsmodules', 'babel-6.1
 
 
 def babel_compile(source, **kwargs):
-    """Compiles the given ``source`` from ES6 to ES5 usin Babeljs"""
+    """Compiles the given ``source`` from ES6 to ES5 using Babeljs"""
     presets = kwargs.get('presets')
     if not presets:
         kwargs['presets'] = ["es2015"]
