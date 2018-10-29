@@ -49,7 +49,6 @@ setup(
     install_requires=INSTALL_REQUIRES,
     extras_require={
         'testing': [
-            'coveralls',
             'nose',
             'mock',
         ],
