@@ -7,9 +7,7 @@ group: edge
 
 language: python
 python:
-- 2.6
 - 2.7
-- 3.3
 - 3.4
 - 3.5
 - &mainstream_python 3.6
@@ -21,7 +19,7 @@ install:
 - travis_retry pip install 'coveralls'
 
 script:
-- nosetests -v --with-coverage --cover-package=dukpy --cover-erase
+- pytest -v --cov=dukpy  --cov-report=term-missing
 - if python -c "import sys; sys.exit(sys.version_info < (2,7))"; then
       python setup.py check -rm;
   fi

@@ -8,7 +8,7 @@ from . import _dukpy
 
 try:
     from collections.abc import Iterable
-except ImportError:
+except ImportError:   # pragma: no cover
     from collections import Iterable
 
 try:  # pragma: no cover

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import unittest
+
 import dukpy
 
 
-class TestReactJS(object):
+class TestReactJS(unittest.TestCase):
     def test_hello_world(self):
         jsx = dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
         jsi = dukpy.JSInterpreter()

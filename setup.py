@@ -49,7 +49,8 @@ setup(
     install_requires=INSTALL_REQUIRES,
     extras_require={
         'testing': [
-            'nose',
+            'pytest',
+            'pytest-cov',
             'mock',
         ],
         'webassets': [
@@ -67,9 +68,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: JavaScript',
     ],
     entry_points={

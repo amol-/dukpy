@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import unittest
 import logging
 import os
 import dukpy
 import mock
 
 
-class TestEvalJS(object):
+class TestEvalJS(unittest.TestCase):
     def test_object_return(self):
         ans = dukpy.evaljs(["var o = {'value': 5}",
                             "o['value'] += 3",

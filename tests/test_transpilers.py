@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-from unittest import TestCase
+import unittest
 
 import dukpy
 from diffreport import report_diff
 from dukpy.lessc import LessCompilerError
 
 
-class TestTranspilers(TestCase):
+class TestTranspilers(unittest.TestCase):
     def test_coffee(self):
         ans = dukpy.coffee_compile('''
     fill = (container, liquid = "coffee") ->
@@ -131,9 +131,6 @@ class HelloWorld extends Component {
         assert expected in ans, report_diff(expected, ans)
 
     def test_less_errors(self):
-        try:
+        with self.assertRaises(LessCompilerError) as err:
             dukpy.less_compile('@import "files/missing.less";')
-        except LessCompilerError as e:
-            assert "files/missing.less' wasn't found." in str(e)
-        else:
-            assert False, 'Exception not raised'
+        assert "files/missing.less' wasn't found." in str(err.exception)

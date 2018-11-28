@@ -2,18 +2,17 @@
 import os
 import shutil
 import tempfile
+import unittest
 
 import sys
 import mock
-from nose import SkipTest
-from nose.tools import raises
 
 import dukpy
 from dukpy import install as dukpy_install
 
 
-class TestPackageInstaller(object):
-    def setup(self):
+class TestPackageInstaller(unittest.TestCase):
+    def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -41,14 +40,14 @@ class TestPackageInstaller(object):
             dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, 'react'))
 
-    @raises(SystemExit)
     def test_install_command_missing_args(self):
-        with mock.patch.object(sys, 'argv', ['dukpy-install']):
-            dukpy_install.main()
+        with self.assertRaises(SystemExit):
+            with mock.patch.object(sys, 'argv', ['dukpy-install']):
+                dukpy_install.main()
 
     def test_install_command_without_dest(self):
         if os.path.exists('./js_modules'):
-            raise SkipTest('local destination directory already exists...')
+            self.skipTest('local destination directory already exists...')
 
         with mock.patch.object(sys, 'argv', ['dukpy-install', 'react', '0.14.8']):
             dukpy_install.main()
@@ -65,29 +64,23 @@ class TestPackageInstaller(object):
             assert dukpy_install.main() == 2
 
     def test_install_unexisting_package(self):
-        try:
+        with self.assertRaises(Exception) as err:
             dukpy.install_jspackage('non_existing_suerly_missing_dunno', '1', self.tmpdir)
-        except:
-            pass
-        else:
-            assert False, 'Should have not found exception'
+        assert 'Not Found' in str(err.exception)
 
-    @raises(dukpy_install.JSPackageInstallError)
     def test_install_unexisting_version(self):
-        dukpy.install_jspackage('react', '9999', self.tmpdir)
+        with self.assertRaises(dukpy_install.JSPackageInstallError):
+            dukpy.install_jspackage('react', '9999', self.tmpdir)
 
-    @raises(dukpy_install.JSPackageInstallError)
     def test_install_missing_download_url(self):
         with mock.patch('dukpy.install._fetch_package_info',
                         new=lambda *args: {'versions': {'99.9.9': {}}}):
-            try:
+            with self.assertRaises(dukpy_install.JSPackageInstallError) as err:
                 dukpy.install_jspackage('react', '99.9.9', self.tmpdir)
-            except Exception as e:
-                assert 'Unable to detect a supported download url' in str(e), str(e)
-                raise
+                assert 'Unable to detect a supported download url' in str(err.exception)
 
 
-class TestVersionResolver(object):
+class TestVersionResolver(unittest.TestCase):
     VERSIONS = {"0.14.5": {}, "0.13.0-rc2": {}, "0.13.0-rc1": {}, "0.14.0-beta3": {}, "0.2.6": {},
                 "0.2.5": {}, "0.2.4": {}, "0.2.3": {}, "0.2.2": {}, "0.2.1": {}, "0.2.0": {},
                 "0.1.2": {}, "0.3.5": {}, "0.10.0-rc1": {}, "0.14.0": {}, "0.10.0": {},

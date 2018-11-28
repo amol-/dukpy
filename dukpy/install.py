@@ -14,7 +14,7 @@ from .evaljs import evaljs
 try:
     from urllib.request import urlopen
     from urllib.parse import quote_plus
-except ImportError:
+except ImportError:  # pragma: no cover
     from urllib2 import urlopen
     from urllib import quote_plus
 
