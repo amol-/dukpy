@@ -14,7 +14,7 @@ python:
 - nightly
 
 install:
-- travis_retry pip install --pre -e .[testing,webassets]
+- travis_retry pip install -U --pre -e .[testing,webassets]
 - travis_retry pip install 'pycparser==2.18'
 - travis_retry pip install 'coveralls'
 
