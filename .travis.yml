@@ -1,19 +1,34 @@
 conditions: v1
 
-os: 
-- linux
-- osx
-dist: trusty
-sudo: false
-group: edge
+matrix:
+- os: linux
+  sudo: false
+  group: edge
+  dist: trusty  
+  python: 2.7
+- os: linux
+  sudo: false
+  group: edge
+  dist: trusty
+  python: 3.4
+- os: linux
+  sudo: false
+  group: edge
+  dist: trusty
+  python: 3.5
+- os: linux
+  sudo: false
+  group: edge
+  dist: trusty
+  python: &mainstream_python 3.6
+- os: linux
+  sudo: false
+  group: edge
+  dist: trusty
+  python: nightly
+- os: osx
+  language: generic
 
-language: python
-python:
-- 2.7
-- 3.4
-- 3.5
-- &mainstream_python 3.6
-- nightly
 
 install:
 - travis_retry pip install -U --pre -e .[testing,webassets]
