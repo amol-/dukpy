@@ -1,6 +1,8 @@
 conditions: v1
 
-os: linux
+os: 
+- linux
+- osx
 dist: trusty
 sudo: false
 group: edge
