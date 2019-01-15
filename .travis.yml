@@ -1,16 +1,15 @@
 conditions: v1
 
 os: linux
-dist: trusty
-sudo: false
-group: edge
+dist: xenial
 
 language: python
 python:
 - 2.7
 - 3.4
 - 3.5
-- &mainstream_python 3.6
+- 3.6
+- &mainstream_python 3.7
 - nightly
 
 install:
@@ -40,9 +39,6 @@ jobs:
   allow_failures:
   - python: nightly
   include:
-  - python: 3.7
-    dist: xenial
-    sudo: required
   - stage: deploy
     python: *mainstream_python
     install: skip
