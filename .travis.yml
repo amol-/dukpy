@@ -106,6 +106,7 @@ env:
   - ls "${PYTHON_INSTALL_PATH}/bin"
   - ls -lh "${PYTHON_INSTALL_EXE}"
   - stat "${PYTHON_INSTALL_EXE}"
+  - /Applications/Python\ ${PYTHON_VERSION_SHORT}/Install\ Certificates.command
   - curl https://bootstrap.pypa.io/get-pip.py | ${PYTHON_INSTALL_EXE}
   - >
     "${PYTHON_INSTALL_EXE}" -m pip install -U pip
