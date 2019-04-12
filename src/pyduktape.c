@@ -2,6 +2,8 @@
 #include <string.h>
 #include <Python.h>
 #include "duktape.h"
+#include "duk_v1_compat.h"
+#include "duk_module_duktape.h"
 #include "_support.h"
 
 
@@ -14,6 +16,8 @@ static PyObject *DukPyError;
 
 static PyObject *DukPy_create_context(PyObject *self, PyObject *_) {
     duk_context *ctx = duk_create_heap(NULL, NULL, NULL, NULL, duktape_fatal_error_handler);
+    duk_module_duktape_init(ctx);
+
     if (!ctx) {
         PyErr_SetString(DukPyError, "Unable to create dukpy interpreter context");
         return NULL;
