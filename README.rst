@@ -14,9 +14,9 @@ dukpy
    :target: https://pypi.org/p/dukpy
 
 
-DukPy is a simple javascript interpreter for Python built on top of
-duktape engine **without any external dependency**.
-It comes with a bunch of common transpilers built-in for convenience:
+DukPy é um simples interpretador javascript para Python construído sobre o
+duktape engine **sem qualquer dependência externa**.
+Ele vem com um monte de transpilers imbutidos por conveniência: 
 
     - *CoffeeScript*
     - *BabelJS*
@@ -24,14 +24,15 @@ It comes with a bunch of common transpilers built-in for convenience:
     - *JSX*
     - *LESS*
 
-Dukpy has been tested on **Python 2.7** and **Python 3.4**, dukpy
-is currently not production ready and might actually crash your
-program as it is mostly implemented in C.
+O Dukpy foi testado no ** Python 2.7 ** e ** Python 3.4 **, dukpy
+atualmente não está pronta para produção e pode realmente causar 
+acidente no seu programa como é principalmente implementado em C.
 
-CoffeeScript Compiler
+
+Compilador CoffeeScript 
 ---------------------
 
-Using the coffeescript compiler is as easy as running:
+Usar o compilador coffeescript é tão fácil quanto funciona:
 
 .. code:: python
 
@@ -45,8 +46,8 @@ Using the coffeescript compiler is as easy as running:
 TypeScript Transpiler
 ---------------------
 
-The TypeScript compiler can be used through the
-``dukpy.typescript_compile`` function:
+O compilador TypeScript pode ser usado através do
+função `` dukpy.typescript_compile``:
 
 .. code:: python
 
@@ -63,12 +64,12 @@ The TypeScript compiler can be used through the
     ... ''')
     'var Greeter = (function () {\n    function Greeter(greeting) {\n        this.greeting = greeting;\n    }\n    Greeter.prototype.greet = function () {\n        return "<h1>" + this.greeting + "</h1>";\n    };\n    return Greeter;\n})();\n;\nvar greeter = new Greeter("Hello, world!");\n'
 
-Currently the compiler has built-in options and doesn't accept additional ones,
+Atualmente, o compilador tem opções incorporadas e não aceita opções adicionais,
 
-The DukPY based TypeScript compiler also provides a WebAssets (
-http://webassets.readthedocs.org/en/latest/ ) filter to automatically
-compile TypeScript code in your assets pipeline.  You register this filter as
-``typescript`` within WebAssets using:
+O compilador TypeScript baseado em DukPY também fornece um filtro WebAssets (
+http://webassets.readthedocs.org/en/latest/) para compilar automaticamente 
+o código TypeScript no pipeline de ativos. Você registra este filtro como 
+`` typescript`` dentro do WebAssets usando:
 
 .. code:: python
 
@@ -77,18 +78,20 @@ compile TypeScript code in your assets pipeline.  You register this filter as
 
     register_filter(TypeScript)
 
-Which makes the filter available with the ``typescript`` name.
+O que torna o filtro disponível com o nome ``typescript``.
 
-**NOTE:** When using the TypeScript compiler for code that needs to run
-in the browser, make sure to add
-https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.24/system.js
-dependency. As ``import`` statements are resolved using SystemJS.
+**NOTA:** Ao usar o compilador TypeScript para o código que precisa ser executado
+no navegador, certifique-se de adicionar a dependência 
+https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.24/system.js. 
+Como as declarações `` import`` são resolvidas usando o SystemJS.
+
 
 EcmaScript6 BabelJS Transpiler
 ------------------------------
 
-To compile ES6 code to ES5 for everyday usage you can use
-``dukpy.babel_compile``:
+Para compilar o código ES6 para o ES5 para uso diário, você pode usar
+`` dukpy.babel_compile``:
+
 
 .. code:: python
 
@@ -106,15 +109,16 @@ To compile ES6 code to ES5 for everyday usage you can use
     ... ''')
     '"use strict";\n\nvar _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };\n\nvar _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };\n\nvar Point = (function () {\n    function Point(x, y) {\n        _classCallCheck(this, Point);\n\n        this.x = x;\n        this.y = y;\n    }\n\n    _prototypeProperties(Point, null, {\n        toString: {\n            value: function toString() {\n                return "(" + this.x + ", " + this.y + ")";\n            },\n            writable: true,\n            configurable: true\n        }\n    });\n\n    return Point;\n})();\n'
 
-You  can pass `options`__ to the BabelJS compiler just as keywords on
-the call to ``babel_compile()``.
+Você pode passar `opções`__ para o compilador BabelJS como palavras-chave 
+na chamada para ``babel_compile()``.
 
 __ http://babeljs.io/docs/usage/options/
 
-The DukPY based BabelJS compiler also provides a WebAssets (
-http://webassets.readthedocs.org/en/latest/ ) filter to automatically
-compile ES6 code in your assets pipeline.  You register this filter as
-``babeljs`` within WebAssets using:
+O compilador BabelJS baseado em DukPY também fornece um filtro WebAssets (
+http://webassets.readthedocs.org/en/latest/) para compilar automaticamente 
+o código ES6 em seu pipeline de ativos. Você registra este filtro como 
+`` babeljs`` dentro de WebAssets usando:
+
 
 .. code:: python
 
@@ -123,21 +127,20 @@ compile ES6 code in your assets pipeline.  You register this filter as
 
     register_filter(BabelJS)
 
-Which makes the filter available with the ``babeljs`` name.
-Only supported filter option is currently `BABEL_MODULES_LOADER` with value
-``systemjs`` or ``umd`` to specify that compiled code should use SystemJS
-or UMD instead of CommonJS for modules.
+O que torna o filtro disponível com o nome `` babeljs``. 
+A única opção de filtro suportado atualmente é `BABEL_MODULES_LOADER` com o valor
+``systemjs`` ou``umd`` para especificar que o código compilado deve usar SystemJS 
+ou UMD ao invés do CommonJS para módulos.
 
-**NOTE:** When using the BabelJS compiler for code that needs to run
-in the browser, make sure to add
-https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.13.0/polyfill.min.js
-dependency.
+**NOTA:** Ao usar o compilador BabelJS para código que precisa ser executado 
+no navegador, certifique-se de adicionar a dependência 
+https://cdnjs.cloudflare.com/ajax/libs/babel polyfill / 6.13.0 / polyfill.min.js.
 
-JSX to React Transpiling
+JSX para Reagir ao Transpilar
 ------------------------
 
-DukPy provides a built-in compiler from JSX to React, this is available as
-``dukpy.jsx_compile``:
+O DukPy fornece um compilador embutido do JSX para o React, que está disponível como 
+`` dukpy.jsx_compile``:
 
 .. code:: python
 
@@ -145,10 +148,11 @@ DukPy provides a built-in compiler from JSX to React, this is available as
     >>> dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
     u'"use strict";\n\nvar react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);'
 
-The DukPY based JSX compiler also provides a WebAssets (
-http://webassets.readthedocs.org/en/latest/ ) filter to automatically
-compile JSX+ES6 code in your assets pipeline.  You register this filter as
-``babeljsx`` within WebAssets using:
+O compilador JSX baseado em DukPY também fornece um filtro WebAssets (
+http://webassets.readthedocs.org/en/latest/) para compilar automaticamente 
+o código JSX + ES6 no pipeline de recursos. Você registra este filtro como 
+`` babeljsx`` dentro de WebAssets usando:
+
 
 .. code:: python
 
@@ -157,14 +161,16 @@ compile JSX+ES6 code in your assets pipeline.  You register this filter as
 
     register_filter(BabelJSX)
 
-Which makes the filter available with the ``babeljsx`` name.
-This filter supports the same options as the babel one.
+O que torna o filtro disponível com o nome `` babeljsx``. 
+Este filtro suporta as mesmas opções que o babel.
+
 
 Less Transpiling
 ----------------
 
-DukPy provides a built-in distribution of the less compiler available
-through `dukpy.less_compile`:
+O DukPy fornece uma distribuição embutida do compilador Less disponível 
+através do `dukpy.less_compile`:
+
 
 .. code:: python
 
@@ -173,10 +179,11 @@ through `dukpy.less_compile`:
     '.class {\n  width: 2;\n}\n'
 
 
-The DukPY based LESS compiler also provides a WebAssets (
-http://webassets.readthedocs.org/en/latest/ ) filter to automatically
-compile LESS code in your assets pipeline.  You register this filter as
-``lessc`` within WebAssets using:
+O compilador LESS baseado em DukPY também fornece um filtro WebAssets (
+http://webassets.readthedocs.org/en/latest/) para compilar automaticamente 
+o código LESS no pipeline de ativos. Você registra este filtro como 
+`` lessc`` dentro do WebAssets usando:
+
 
 .. code:: python
 
@@ -185,14 +192,15 @@ compile LESS code in your assets pipeline.  You register this filter as
 
     register_filter(CompileLess)
 
-Which makes the filter available with the ``lessc`` name.
+O que torna o filtro disponível com o nome ``lessc``.
 
 
-Using the JavaScript Interpreter
+Usando o Interpretador JavaScript 
 --------------------------------
 
-Using dukpy is as simple as calling the ``dukpy.evaljs`` function with
-the javascript code:
+Usar o dukpy é tão simples quanto chamar a função `` dukpy.evaljs`` 
+com o código javascript:
+
 
 .. code:: python
 
@@ -201,18 +209,20 @@ the javascript code:
     {'value': 8}
 
 
-The ``evaljs`` function executes the javascript and returns the
-resulting value as far as it is possible to encode it in JSON.
+A função `` evaljs`` executa o javascript e retorna o valor 
+resultante na medida em que é possível codificá-lo em JSON.
 
-If execution fails a ``dukpy.JSRuntimeError`` exception is raised
-with the failure reason.
+Se a execução falhar, uma exceção `` dukpy.JSRuntimeError`` 
+é levantada com o motivo da falha.
 
-Passing Arguments
+
+Passando Argumentos
 ~~~~~~~~~~~~~~~~~
 
-Any argument passed to ``evaljs`` is available in JavaScript inside
-the ``dukpy`` object in javascript. It must be possible to encode
-the arguments using JSON for them to be available in Javascript:
+Qualquer argumento passado para `` evaljs`` está disponível em JavaScript 
+dentro do objeto `` dukpy`` em javascript. Deve ser possível codificar 
+os argumentos usando JSON para que eles estejam disponíveis em Javascript:
+
 
 .. code:: python
 
@@ -224,13 +234,13 @@ the arguments using JSON for them to be available in Javascript:
     >>> sum3(7)
     10
 
-Running Multiple Scripts
+Executando Múltiplos Scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``evaljs`` function supports providing multiple source codes to
-be executed in the same context.
+A função `` evaljs`` suporta o fornecimento de múltiplos códigos fontes para 
+serem executados no mesmo contexto.
 
-Multiple script can be passed in a list or tuple:
+Múltiplos scripts podem ser passados em uma lista ou tupla:
 
 .. code:: python
 
@@ -240,11 +250,11 @@ Multiple script can be passed in a list or tuple:
     ...               "o"])
     {'value': 8}
 
-This is useful when your code requires dependencies to work,
-as you can load the dependency and then your code.
+Isso é útil quando seu código requer dependências para funcionar, 
+pois você pode carregar a dependência e, em seguida, seu código.
 
-This is actually how the coffeescript compiler is implemented
-by DukPy itself:
+É assim que o compilador de coffeescript é implementado pelo próprio DukPy:
+
 
 .. code:: python
 
@@ -253,21 +263,22 @@ by DukPy itself:
             return evaljs((coffeescript_js.read(), 'CoffeeScript.compile(dukpy.coffeecode)'),
                           coffeecode=source)
 
-Using a persistent JavaScript Interpreter
+Usando um Interpretador JavaScript persistente
 -----------------------------------------
 
-The ``evaljs`` function creates a new interpreter on each call,
-this is usually convenient and avoid errors due to dirt global variables
-or unexpected execution status.
+A função `` evaljs`` cria um novo intérprete em cada chamada, 
+isto é geralmente conveniente e evita erros devido a variáveis globais de sujeira 
+ou status de execução inesperado.
 
-In some cases you might want to run code that has a slow bootstrap, so
-it's convenient to reuse the same interpreter between two different calls
-so that the bootstrap cost has already been paid during the first execution.
+Em alguns casos, você pode querer executar um código que tenha um bootstrap lento, portanto, 
+é conveniente reutilizar o mesmo interpretador entre duas chamadas diferentes, 
+de modo que o custo de bootstrap já tenha sido pago durante a primeira execução.
 
-This can be achieved by using the ``dukpy.JSInterpreter`` object.
+Isto pode ser conseguido usando o objeto `` dukpy.JSInterpreter``.
 
-Creating a ``dukpy.JSInterpreter`` permits to evaluate code inside that interpreter
-and multiple ``eval`` calls will share the same interpreter and global status:
+Criar um `` dukpy.JSInterpreter`` permite avaliar o código dentro daquele interpretador 
+e várias chamadas `` eval`` irão compartilhar o mesmo interpretador e status global:
+
 
 
 .. code:: python
@@ -279,14 +290,15 @@ and multiple ``eval`` calls will share the same interpreter and global status:
     >>> interpreter.evaljs("o.value += 1; o")
     {u'value': 6}
 
-Loading modules with require
+Carregando módulos com require
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When using the ``dukpy.JSInterpreter`` object it is possible to use
-the ``require('modulename')`` instruction to load a module inside javascript.
+Ao usar o objeto `` dukpy.JSInterpreter`` é possível usar 
+a instrução `` require ('modulename') `` para carregar um módulo dentro do javascript.
 
-Modules are looked up in all directories registered with
-``dukpy.JSInterpreter.loader.register_path``:
+Os módulos são procurados em todos os diretórios registrados com 
+`` dukpy.JSInterpreter.loader.register_path``:
+
 
 .. code:: python
 
@@ -296,11 +308,12 @@ Modules are looked up in all directories registered with
     >>> jsi.evaljs("isEmpty = require('fbjs/lib/isEmpty'); isEmpty([1])")
     False
 
-Installing packages from npmjs.org
+Instalando pacotes do npmjs.org
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When using the persistent javascript interpreter it is also possible to install packages
-from *npmjs.org* through the ``dukpy.install_jspackage`` function:
+Ao usar o interpretador javascript persistente, também é possível instalar pacotes 
+do * npmjs.org * através da função `` dukpy.install_jspackage``:
+
 
 .. code:: python
 
@@ -312,7 +325,8 @@ from *npmjs.org* through the ``dukpy.install_jspackage`` function:
     Fetching https://registry.npmjs.org/asap/-/asap-2.0.3.tgz............
     Installing promise in ./js_modules Done!
 
-The same functionality is also provided by the ``dukpy-install`` shell command::
+A mesma funcionalidade também é fornecida pelo comando shell `` dukpy-install`` ::
+
 
     $ dukpy-install -d ./js_modules promise
     Packages going to be installed: promise->7.1.1, asap->2.0.3
@@ -320,5 +334,6 @@ The same functionality is also provided by the ``dukpy-install`` shell command::
     Fetching https://registry.npmjs.org/asap/-/asap-2.0.3.tgz............
     Installing promise in ./js_modules Done!
 
-Please note that currently `install_jspackage` is not able to resolve conflicting
-dependencies.
+Por favor note que atualmente o `install_jspackage` não é capaz de resolver dependências 
+conflitantes.
+
