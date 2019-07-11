@@ -657,7 +657,7 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <time.h>
-#include <stdint.h>
+#include <pstdint.h>
 
 #define DUK_USE_DATE_NOW_GETTIMEOFDAY
 #define DUK_USE_DATE_TZO_GMTIME_R
@@ -684,7 +684,7 @@
 /* no endian.h or stdint.h */
 #else
 #include <endian.h>
-#include <stdint.h>
+#include <pstdint.h>
 #endif  /* DUK_F_BCC */
 #include <sys/param.h>
 #include <sys/time.h>
@@ -833,7 +833,7 @@
  * __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS must be defined before
  * including stdint.h (see above).
  */
-#include <stdint.h>
+#include <pstdint.h>
 #endif
 
 /* <exception> is only included if needed, based on DUK_USE_xxx flags. */
