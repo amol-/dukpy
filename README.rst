@@ -130,7 +130,7 @@ or UMD instead of CommonJS for modules.
 
 **NOTE:** When using the BabelJS compiler for code that needs to run
 in the browser, make sure to add
-https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.13.0/polyfill.min.js
+https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.26.0/polyfill.min.js
 dependency.
 
 JSX to React Transpiling
