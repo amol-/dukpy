@@ -24,10 +24,6 @@ It comes with a bunch of common transpilers built-in for convenience:
     - *JSX*
     - *LESS*
 
-Dukpy has been tested on **Python 2.7** and **Python 3.4**, dukpy
-is currently not production ready and might actually crash your
-program as it is mostly implemented in C.
-
 CoffeeScript Compiler
 ---------------------
 
