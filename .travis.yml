@@ -58,7 +58,7 @@ env:
   - |
     function probe_url() {
       local py_ver="$1"
-      [ $(curl -I --write-out '%{http_code}' --silent --output /dev/null "https://www.python.org/ftp/python/${py_ver}/python-${py_ver}-macosx10.6.pkg") == '200' ] && return 0
+      [ $(curl -I --write-out '%{http_code}' --silent --output /dev/null "https://www.python.org/ftp/python/${py_ver}/python-${py_ver}-macosx10.9.pkg") == '200' ] && return 0
       return 1
     }
   - |
@@ -101,7 +101,7 @@ env:
   - echo "PYTHON_INSTALLER_PATH=${PYTHON_INSTALLER_PATH}"
   - env
   - >
-    stat "${PYTHON_INSTALLER_PATH}" &>/dev/null || wget -O "${PYTHON_INSTALLER_PATH}" "https://www.python.org/ftp/python/${PYTHON_VERSION_LONG}/python-${PYTHON_VERSION_LONG}-macosx10.6.pkg"
+    stat "${PYTHON_INSTALLER_PATH}" &>/dev/null || wget -O "${PYTHON_INSTALLER_PATH}" "https://www.python.org/ftp/python/${PYTHON_VERSION_LONG}/python-${PYTHON_VERSION_LONG}-macosx10.9.pkg"
   - stat "${PYTHON_INSTALLER_PATH}" >/dev/null
   - sudo installer -verboseR -dumplog -pkg "${PYTHON_INSTALLER_PATH}" -target /
   - ls "${PYTHON_INSTALL_PATH}/bin"
@@ -127,6 +127,10 @@ jobs:
 
   include:
   - <<: *macos-job
+    name: Running tests against Python 3.8 env under macOS 10.13
+    env:
+      PYTHON_VERSION: 3.8
+  - <<: *macos-job
     name: Running tests against Python 3.7 env under macOS 10.13
     env:
       PYTHON_VERSION: 3.7
@@ -134,19 +138,10 @@ jobs:
     name: Running tests against Python 2.7 env under macOS 10.13
     env:
       PYTHON_VERSION: 2.7
-
   - <<: *macos-job
     name: Running tests against Python 3.6 env under macOS 10.13
     env:
       PYTHON_VERSION: 3.6
-  - <<: *macos-job
-    name: Running tests against Python 3.5 env under macOS 10.13
-    env:
-      PYTHON_VERSION: 3.5
-  - <<: *macos-job
-    name: Running tests against Python 3.4 env under macOS 10.13
-    env:
-      PYTHON_VERSION: 3.4
 
   - stage: deploy
     python: *mainstream_python
