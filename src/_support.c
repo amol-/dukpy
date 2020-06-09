@@ -8,7 +8,7 @@
 static char const * const CONTEXT_CAPSULE_NAME = "DUKPY_CONTEXT_CAPSULE";
 
 
-duk_ret_t stack_json_encode(duk_context *ctx) {
+duk_ret_t stack_json_encode(duk_context *ctx, void *ptr) {
     const char *output = duk_json_encode(ctx, -1);
     duk_push_string(ctx, output);
     return 1;
@@ -31,7 +31,7 @@ duk_context *get_context_from_capsule(PyObject* pyctx) {
 }
 
 
-void duktape_fatal_error_handler(duk_context *ctx, duk_errcode_t code, const char *msg) {
+void duktape_fatal_error_handler(void *ctx, const char *msg) {
     PyErr_SetString(PyExc_RuntimeError, msg);
 }
 

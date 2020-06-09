@@ -2,6 +2,8 @@
 #include <string.h>
 #include <Python.h>
 #include "duktape.h"
+#include "duk_v1_compat.h"
+#include "duk_module_duktape.h"
 #include "_support.h"
 
 
@@ -14,6 +16,8 @@ static PyObject *DukPyError;
 
 static PyObject *DukPy_create_context(PyObject *self, PyObject *_) {
     duk_context *ctx = duk_create_heap(NULL, NULL, NULL, NULL, duktape_fatal_error_handler);
+    duk_module_duktape_init(ctx);
+
     if (!ctx) {
         PyErr_SetString(DukPyError, "Unable to create dukpy interpreter context");
         return NULL;
@@ -81,7 +85,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    rc = duk_safe_call(ctx, stack_json_encode, 1, 1);
+    rc = duk_safe_call(ctx, stack_json_encode, NULL, 1, 1);
     if (rc != DUK_EXEC_SUCCESS) {
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
         duk_pop(ctx);
@@ -133,7 +137,7 @@ PyInit__dukpy()
 #else
 
 PyMODINIT_FUNC 
-init_dukpy()
+init_dukpy(void)
 {
     PyObject *module = Py_InitModule3("_dukpy", DukPy_methods, DukPy_doc);
     if (module == NULL)
