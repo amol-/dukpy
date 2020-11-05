@@ -7,7 +7,8 @@ py_version = sys.version_info[:2]
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 try:
-    README = open(os.path.join(HERE, 'README.rst')).read()
+    with open(os.path.join(HERE, 'README.rst')) as fh:
+        README = fh.read()
 except IOError:
     README = ''
 
