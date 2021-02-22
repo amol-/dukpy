@@ -108,7 +108,7 @@ env:
   - ls -lh "${PYTHON_INSTALL_EXE}"
   - stat "${PYTHON_INSTALL_EXE}"
   - /Applications/Python\ ${PYTHON_VERSION_SHORT}/Install\ Certificates.command || echo "No need to fix certificates"
-  - curl https://bootstrap.pypa.io/get-pip.py | ${PYTHON_INSTALL_EXE}
+  - if [ "2.7" = "$PYTHON_VERSION" ]; then curl https://bootstrap.pypa.io/2.7/get-pip.py | ${PYTHON_INSTALL_EXE}; else curl https://bootstrap.pypa.io/get-pip.py | ${PYTHON_INSTALL_EXE}; fi
   - >
     "${PYTHON_INSTALL_EXE}" -m pip install -U pip
   - >
@@ -116,7 +116,7 @@ env:
   - >
     "${PYTHON_INSTALL_EXE}" -m virtualenv "${PYTHON_VENV_PATH}"
   - . "${PYTHON_VENV_PATH}/bin/activate"
-  - curl https://bootstrap.pypa.io/get-pip.py | python
+  - if [ "2.7" = "$PYTHON_VERSION" ]; then curl https://bootstrap.pypa.io/2.7/get-pip.py | python; else curl https://bootstrap.pypa.io/get-pip.py | python; fi
   - python --version
   - pip --version
 
