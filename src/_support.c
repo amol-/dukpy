@@ -73,6 +73,15 @@ int call_py_function(duk_context *ctx) {
     duk_pop(ctx);
     duk_pop(ctx);
 
+    ret = PyObject_CallMethod(interpreter, "_check_exported_function_exists",
+                              CONDITIONAL_PY3("y", "s"), pyfuncname);
+
+    if (ret == Py_False) {
+        duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR,
+                              "No Python Function named %s", pyfuncname);
+        duk_throw(ctx);
+    }
+
     ret = PyObject_CallMethod(interpreter, "_call_python", CONDITIONAL_PY3("yy", "ss"),
                               pyfuncname, args);
 

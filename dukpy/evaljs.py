@@ -69,6 +69,10 @@ class JSInterpreter(object):
         """
         self._funcs[name] = func
 
+    def _check_exported_function_exists(self, func):
+        func = func.decode('utf-8')
+        return func in self._funcs
+
     def _call_python(self, func, json_args):
         # Arguments came in reverse order from JS
         func = func.decode('utf-8')
