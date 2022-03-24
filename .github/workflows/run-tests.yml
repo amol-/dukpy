@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        python-version: ["2.7", "3.6", "3.7", "3.8", "3.9"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -23,3 +23,7 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -v --cov=dukpy  --cov-report=term-missing
+      - name: Publish to coveralls.io
+        uses: coverallsapp/github-action@v1.1.2
+        with:
+          github-token: ${{ github.token }}
