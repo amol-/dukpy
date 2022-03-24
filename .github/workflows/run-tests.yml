@@ -19,11 +19,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -U --upgrade-strategy=eager --pre -e .[testing,webassets]
           pip install 'pycparser==2.18'
-          pip install 'coveralls'
       - name: Test with pytest
         run: |
           pytest -v --cov=dukpy  --cov-report=term-missing
       - name: Publish to coveralls.io
-        uses: coverallsapp/github-action@v1.1.2
-        with:
-          github-token: ${{ github.token }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install 'coveralls'
+          coveralls
