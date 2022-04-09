@@ -1,11 +1,8 @@
 dukpy
 =====
 
-.. image:: https://img.shields.io/travis/amol-/dukpy/master.svg?label=Linux%20build%20%40%20Travis%20CI
+.. image:: https://github.com/amol-/dukpy/actions/workflows/run-tests.yml/badge.svg
     :target: https://travis-ci.org/amol-/dukpy
-
-.. image:: https://img.shields.io/appveyor/ci/amol-/dukpy/master.svg?label=Windows%20build%20%40%20Appveyor
-    :target: https://ci.appveyor.com/project/amol-/dukpy
 
 .. image:: https://coveralls.io/repos/amol-/dukpy/badge.png?branch=master
     :target: https://coveralls.io/r/amol-/dukpy?branch=master
