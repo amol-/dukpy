@@ -78,8 +78,9 @@ def install_jspackage(package_name, version, modulesdir):
             tmpdir = tempfile.mkdtemp()
             try:
                 tb.extractall(tmpdir)
+                dirname = os.listdir(tmpdir)[0]
                 shutil.rmtree(os.path.abspath(dest), ignore_errors=True)
-                shutil.move(os.path.join(tmpdir, 'package'),
+                shutil.move(os.path.join(tmpdir, dirname),
                             os.path.abspath(dest))
             finally:
                 shutil.rmtree(tmpdir)
