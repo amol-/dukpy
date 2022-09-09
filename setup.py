@@ -17,8 +17,7 @@ if py_version == (2, 6):
     INSTALL_REQUIRES.append('argparse')
 
 duktape = Extension('dukpy._dukpy',
-                    define_macros=[('DUK_OPT_DEEP_C_STACK', '1'),
-                                   ('DUK_OPT_NONSTD_REGEXP_DOLLAR_ESCAPE', '1'),
+                    define_macros=[('DUK_OPT_NONSTD_REGEXP_DOLLAR_ESCAPE', '1'),
                                    ('DUK_OPT_OCTAL_SUPPORT', '1')],
                     sources=[os.path.join('src', 'duktape', 'duktape.c'),
                              os.path.join('src', 'duktape', 'duk_v1_compat.c'),
