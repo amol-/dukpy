@@ -7,6 +7,8 @@ import os
 import dukpy
 import mock
 
+import pytest
+
 
 class TestEvalJS(unittest.TestCase):
     def test_object_return(self):
@@ -58,3 +60,25 @@ class TestEvalJS(unittest.TestCase):
         with mock.patch.object(log, 'warn', return_value=None) as fakelog:
             dukpy.evaljs('console.warn("HI")')
             assert fakelog.call_count == 1
+
+
+@pytest.mark.parametrize(
+    ('input_number', 'expected_integer'),
+    (
+        (3, 3),
+        (3.54, 3),
+        (2.3, 2),
+        ('-1', -1),
+        ('-53', -53),
+        ('-0', -0),
+        (0, 0),
+    ),
+)
+def test_Math_trunc(input_number, expected_integer):
+    """Check that ``Math.trunc()`` is invokable.
+
+    Ref: https://github.com/amol-/dukpy/issues/62
+    """
+    assert expected_integer == dukpy.evaljs(
+        'Math.trunc({input_number})'.format(**locals()),
+    )
