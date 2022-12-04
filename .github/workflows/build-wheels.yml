@@ -11,8 +11,6 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    env:
-      CIBW_ARCHS_MACOS: "x86_64 arm64"
     strategy:
       matrix:
         os: [ubuntu-20.04, windows-2019, macOS-10.15]
@@ -28,9 +26,8 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-        # to supply options, put them in 'env', like:
-        # env:
-        #   CIBW_SOME_OPTION: value
+        env:
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
 
       - uses: actions/upload-artifact@v2
         with:
