@@ -105,7 +105,7 @@ int call_py_function(duk_context *ctx) {
         }
 
         duk_push_error_object(ctx, DUK_ERR_EVAL_ERROR,
-                              "Error while calling Python Function: %s", strerror);
+                              "Error while calling Python Function (%s): %s", pyfuncname, strerror);
 
         Py_XDECREF(error_repr);
         Py_XDECREF(ptype);
