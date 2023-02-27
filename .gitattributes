@@ -1,1 +1,3 @@
 dukpy/jsmodules/* linguist-generated=false
+*.py linguist-detectable=true
+tests linguist-detectable=true
