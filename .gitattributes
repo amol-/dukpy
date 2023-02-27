@@ -1,3 +1,3 @@
 dukpy/jsmodules/* linguist-vendored
 *.py linguist-detectable linguist-language=python 
-tests linguist-detectable linguist-language=python
+tests/*.py linguist-detectable linguist-language=python
