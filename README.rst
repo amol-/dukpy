@@ -2,7 +2,7 @@ dukpy
 =====
 
 .. image:: https://github.com/amol-/dukpy/actions/workflows/run-tests.yml/badge.svg
-    :target: https://travis-ci.org/amol-/dukpy
+    :target: https://github.com/amol-/dukpy/actions/workflows/run-tests.yml
 
 .. image:: https://coveralls.io/repos/amol-/dukpy/badge.png?branch=master
     :target: https://coveralls.io/r/amol-/dukpy?branch=master
