@@ -1,4 +1,5 @@
 dukpy/jsmodules/* linguist-vendored
+dukpy/jsmodules/**/* linguist-vendored
 src/duktape/* linguist-vendored
 *.py linguist-detectable linguist-language=python 
 tests/*.py linguist-detectable linguist-language=python
