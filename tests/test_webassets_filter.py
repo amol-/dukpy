@@ -10,7 +10,16 @@ except:
     from StringIO import StringIO
 
 
-class TestAssetsFilters(TempEnvironmentHelper):
+class PyTestTempEnvironmentHelper(TempEnvironmentHelper):
+    """Adapt TempEnvironmentHelper to be compatible with PyTest"""
+    def setup_method(self):
+        self.setup()
+
+    def teardown_method(self):
+        self.teardown()
+
+
+class TestAssetsFilters(PyTestTempEnvironmentHelper):
     @classmethod
     def setup_class(cls):
         from webassets.filter import register_filter
@@ -75,7 +84,7 @@ var greeter = new Greeter("Hello, world!");
         assert expected in ans, report_diff(expected, ans)
 
 
-class TestLessFilter(TempEnvironmentHelper):
+class TestLessFilter(PyTestTempEnvironmentHelper):
     LESS_CODE = '''
 @import "colors.less";
 .box-shadow(@style, @c) when (iscolor(@c)) {
@@ -113,7 +122,7 @@ class TestLessFilter(TempEnvironmentHelper):
 """
 
 
-class TestJSXFilter(TempEnvironmentHelper):
+class TestJSXFilter(PyTestTempEnvironmentHelper):
     JSX_CODE = '''
 import Component from 'react';
 
