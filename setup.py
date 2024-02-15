@@ -32,12 +32,12 @@ repo_url = 'https://github.com/{0}'.format(repo_slug)
 
 setup(
     name=name,
-    version='0.3.0',
+    version='0.3.1',
     description='Simple JavaScript interpreter for Python',
     long_description=README,
     keywords='javascript compiler babeljs jsx coffeescript typescript',
     author='Alessandro Molina',
-    author_email='amol@turbogears.org',
+    author_email='alessandro@molina.fyi',
     url=repo_url,
     project_urls={
         'CI: AppVeyor': 'https://ci.appveyor.com/project/{0}'.format(repo_slug),
@@ -66,6 +66,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.9',
