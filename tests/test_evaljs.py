@@ -30,8 +30,11 @@ class TestEvalJS(unittest.TestCase):
         assert s == '華華'
 
     def test_unicode_emoji(self):
-        s = dukpy.evaljs("dukpy.c + 'B'", c="🏠")
-        assert s == '🏠B'
+        s1 = dukpy.evaljs("dukpy.c + 'B'", c="🏠")
+        assert s1 == '🏠B'
+
+        s2 = dukpy.evaljs("dukpy.c + 'C'", c="👍🏾")
+        assert s2 == '👍🏾C'
 
     def test_eval_files(self):
         testfile = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test.js')
