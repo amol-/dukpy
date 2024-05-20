@@ -45,7 +45,7 @@ class JSInterpreter(object):
 
         Returns the last object on javascript stack.
         """
-        jsvars = json.dumps(kwargs)
+        jsvars = json.dumps(kwargs, ensure_ascii=False)
         jscode = self._adapt_code(code)
 
         if not isinstance(jscode, bytes):
