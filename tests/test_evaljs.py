@@ -36,6 +36,9 @@ class TestEvalJS(unittest.TestCase):
         s2 = dukpy.evaljs("dukpy.c + 'C'", c="👍🏾")
         assert s2 == '👍🏾C'
 
+        s3 = dukpy.evaljs("dukpy.c + '華'", c="🏠")
+        assert s3 == '🏠華'
+
     def test_eval_files(self):
         testfile = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test.js')
         with open(testfile) as f:
