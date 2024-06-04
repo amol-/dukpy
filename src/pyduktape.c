@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "duktape.h"
 #include "duk_v1_compat.h"
 #include "duk_module_duktape.h"
 #include "_support.h"
 
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,13 +34,16 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     PyObject *pyctx;
     duk_context *ctx;
     const char *command;
+    size_t command_len;
     const char *vars;
+    size_t vars_len;
     int res;
     duk_int_t rc;
     const char *output;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, CONDITIONAL_PY3("Oyy", "Oss"), &interpreter, &command, &vars))
+    if (!PyArg_ParseTuple(args, CONDITIONAL_PY3("Oy#y#", "Os#s#"), &interpreter,
+                          &command, &command_len, &vars, &vars_len))
         return NULL;
 
     pyctx = PyObject_GetAttrString(interpreter, "_ctx");
@@ -76,7 +81,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     duk_push_c_function(ctx, require_set_module_id, 2);
     duk_put_global_string(ctx, "_require_set_module_id");
 
-    res = duk_peval_string(ctx, command);
+    res = duk_peval_lstring(ctx, command, command_len);
     if (res != 0) {
         duk_get_prop_string(ctx, -1, "stack");
         PyErr_SetString(DukPyError, duk_safe_to_string(ctx, -1));
@@ -93,7 +98,22 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return NULL;
     }
 
+    /* In some cases the JSON encoding will emit null because 
+       the object was valid but had no properties that could be
+       represented as JSON, in this case let's return an empty object */
+    if (duk_is_null(ctx, -1)) {
+        duk_pop(ctx);
+        duk_push_string(ctx, "{}");
+    }
+
     output = duk_get_string(ctx, -1);
+    if (output == NULL) {
+        PyErr_SetString(DukPyError, "Invalid Result Value");
+        duk_pop(ctx);
+        Py_XDECREF(pyctx);
+        return NULL;
+    }
+
     result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
     duk_pop(ctx);
     Py_XDECREF(pyctx);
