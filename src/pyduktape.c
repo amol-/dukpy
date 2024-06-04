@@ -69,7 +69,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     duk_pop(ctx);
 
     /* Make passed arguments available as the dukpy global object */
-    duk_push_string(ctx, vars);
+    duk_push_lstring(ctx, vars, vars_len);
     duk_json_decode(ctx, -1);
     duk_put_global_string(ctx, "dukpy");
 
