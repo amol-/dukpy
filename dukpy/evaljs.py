@@ -3,6 +3,10 @@ import json
 import os
 import logging
 
+# Duktape uses CESU-8 encoding, so we need support for it.
+# see https://github.com/svaarala/duktape/issues/504#issuecomment-168336246
+from mutf8 import encode_modified_utf8, decode_modified_utf8
+
 from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
 
@@ -45,20 +49,20 @@ class JSInterpreter(object):
 
         Returns the last object on javascript stack.
         """
-        jsvars = json.dumps(kwargs, ensure_ascii=False)
+        jsvars = json.dumps(kwargs)
         jscode = self._adapt_code(code)
 
         if not isinstance(jscode, bytes):
-            jscode = jscode.encode('utf-8')
+            jscode = encode_modified_utf8(jscode)
 
         if not isinstance(jsvars, bytes):
-            jsvars = jsvars.encode('utf-8')
+            jsvars = encode_modified_utf8(jsvars)
 
         res = _dukpy.eval_string(self, jscode, jsvars)
         if res is None:
             return None
 
-        return json.loads(res.decode('utf-8'))
+        return json.loads(decode_modified_utf8(res))
 
     def export_function(self, name, func):
         """Exports a python function to the javascript layer with the given name.
@@ -70,18 +74,18 @@ class JSInterpreter(object):
         self._funcs[name] = func
 
     def _check_exported_function_exists(self, func):
-        func = func.decode('utf-8')
+        func = func.decode('ascii')
         return func in self._funcs
 
     def _call_python(self, func, json_args):
         # Arguments came in reverse order from JS
-        func = func.decode('utf-8')
-        json_args = json_args.decode('utf-8')
+        func = func.decode('ascii')
+        json_args = decode_modified_utf8(json_args)
 
         args = list(reversed(json.loads(json_args)))
         ret = self._funcs[func](*args)
         if ret is not None:
-            return json.dumps(ret).encode('utf-8')
+            return encode_modified_utf8(json.dumps(ret))
 
     def _init_process(self):
         self.evaljs("process = {}; process.env = dukpy.environ", environ=dict(os.environ))

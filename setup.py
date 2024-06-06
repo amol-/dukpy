@@ -12,7 +12,7 @@ try:
 except IOError:
     README = ''
 
-INSTALL_REQUIRES = []
+INSTALL_REQUIRES = ["mutf8"]
 if py_version == (2, 6):
     INSTALL_REQUIRES.append('argparse')
 
