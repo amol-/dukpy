@@ -3,10 +3,6 @@ import json
 import os
 import logging
 
-# Duktape uses CESU-8 encoding, so we need support for it.
-# see https://github.com/svaarala/duktape/issues/504#issuecomment-168336246
-from mutf8 import encode_modified_utf8, decode_modified_utf8
-
 from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
 
@@ -53,16 +49,16 @@ class JSInterpreter(object):
         jscode = self._adapt_code(code)
 
         if not isinstance(jscode, bytes):
-            jscode = encode_modified_utf8(jscode)
+            jscode = jscode.encode('utf-8')
 
         if not isinstance(jsvars, bytes):
-            jsvars = encode_modified_utf8(jsvars)
+            jsvars = jsvars.encode('utf-8')
 
         res = _dukpy.eval_string(self, jscode, jsvars)
         if res is None:
             return None
 
-        return json.loads(decode_modified_utf8(res))
+        return json.loads(res.decode('utf-8'))
 
     def export_function(self, name, func):
         """Exports a python function to the javascript layer with the given name.
@@ -80,12 +76,12 @@ class JSInterpreter(object):
     def _call_python(self, func, json_args):
         # Arguments came in reverse order from JS
         func = func.decode('ascii')
-        json_args = decode_modified_utf8(json_args)
+        json_args = json_args.decode('utf-8')
 
         args = list(reversed(json.loads(json_args)))
         ret = self._funcs[func](*args)
         if ret is not None:
-            return encode_modified_utf8(json.dumps(ret))
+            return json.dumps(ret).encode('utf-8')
 
     def _init_process(self):
         self.evaljs("process = {}; process.env = dukpy.environ", environ=dict(os.environ))
