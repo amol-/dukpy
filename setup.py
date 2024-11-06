@@ -32,7 +32,7 @@ repo_url = 'https://github.com/{0}'.format(repo_slug)
 
 setup(
     name=name,
-    version='0.4.0',
+    version='0.5.0',
     description='Simple JavaScript interpreter for Python',
     long_description=README,
     keywords='javascript compiler babeljs jsx coffeescript typescript',
