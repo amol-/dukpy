@@ -1,13 +1,13 @@
 /*
- *  Duktape public API for Duktape 2.7.0.
+ *  Duktape public API for Duktape 2.99.99.
  *
  *  See the API reference for documentation on call semantics.  The exposed,
  *  supported API is between the "BEGIN PUBLIC API" and "END PUBLIC API"
  *  comments.  Other parts of the header are Duktape internal and related to
  *  e.g. platform/compiler/feature detection.
  *
- *  Git commit 03d4d728f8365021de6955c649e6dcd05dcca99f (03d4d72-dirty).
- *  Git branch HEAD.
+ *  Git commit 50af773b1b32067170786c2b7c661705ec7425d4 (50af773).
+ *  Git branch master.
  *
  *  See Duktape AUTHORS.rst and LICENSE.txt for copyright and
  *  licensing information.
@@ -15,13 +15,9 @@
 
 /* LICENSE.txt */
 /*
- *  ===============
- *  Duktape license
- *  ===============
+ *  The MIT License (MIT)
  *  
- *  (http://opensource.org/licenses/MIT)
- *  
- *  Copyright (c) 2013-present by Duktape authors (see AUTHORS.rst)
+ *  Copyright (c) 2013-present, Duktape authors (see AUTHORS.rst)
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -116,6 +112,12 @@
  *  * William Parks (https://github.com/WilliamParks)
  *  * Sam Hellawell (https://github.com/samhellawell)
  *  * Vladislavs Sokurenko (https://github.com/sokurenko)
+ *  * Luca Boccassi (https://github.com/bluca)
+ *  * Radu Rendec (https://github.com/rrendec)
+ *  * tinywrkb (https://github.com/tinywrkb)
+ *  * Christoph Kaser (https://github.com/ChristophKaser)
+ *  * Jonne Ransijn <jonne@yyny.dev>
+ *  * Liu Xiang <liuxiang@loongson.cn>
  *  
  *  Other contributions
  *  ===================
@@ -158,6 +160,7 @@
  *  * Andrew Janke (https://github.com/apjanke)
  *  * Unamer (https://github.com/unamer)
  *  * Karl Dahlke (eklhad@gmail.com)
+ *  * https://github.com/k3a
  *  
  *  If you are accidentally missing from this list, send me an e-mail
  *  (``sami.vaarala@iki.fi``) and I'll fix the omission.
@@ -182,16 +185,16 @@
  * development snapshots have 99 for patch level (e.g. 0.10.99 would be a
  * development version after 0.10.0 but before the next official release).
  */
-#define DUK_VERSION                       20700L
+#define DUK_VERSION                       29999L
 
 /* Git commit, describe, and branch for Duktape build.  Useful for
  * non-official snapshot builds so that application code can easily log
  * which Duktape snapshot was used.  Not available in the ECMAScript
  * environment.
  */
-#define DUK_GIT_COMMIT                    "03d4d728f8365021de6955c649e6dcd05dcca99f"
-#define DUK_GIT_DESCRIBE                  "03d4d72-dirty"
-#define DUK_GIT_BRANCH                    "HEAD"
+#define DUK_GIT_COMMIT                    "50af773b1b32067170786c2b7c661705ec7425d4"
+#define DUK_GIT_DESCRIBE                  "50af773"
+#define DUK_GIT_BRANCH                    "master"
 
 /* External duk_config.h provides platform/compiler/OS dependent
  * typedefs and macros, and DUK_USE_xxx config options so that
@@ -383,13 +386,20 @@ struct duk_time_components {
 #define DUK_DEFPROP_WRITABLE              (1U << 0)    /* set writable (effective if DUK_DEFPROP_HAVE_WRITABLE set) */
 #define DUK_DEFPROP_ENUMERABLE            (1U << 1)    /* set enumerable (effective if DUK_DEFPROP_HAVE_ENUMERABLE set) */
 #define DUK_DEFPROP_CONFIGURABLE          (1U << 2)    /* set configurable (effective if DUK_DEFPROP_HAVE_CONFIGURABLE set) */
-#define DUK_DEFPROP_HAVE_WRITABLE         (1U << 3)    /* set/clear writable */
-#define DUK_DEFPROP_HAVE_ENUMERABLE       (1U << 4)    /* set/clear enumerable */
-#define DUK_DEFPROP_HAVE_CONFIGURABLE     (1U << 5)    /* set/clear configurable */
-#define DUK_DEFPROP_HAVE_VALUE            (1U << 6)    /* set value (given on value stack) */
-#define DUK_DEFPROP_HAVE_GETTER           (1U << 7)    /* set getter (given on value stack) */
-#define DUK_DEFPROP_HAVE_SETTER           (1U << 8)    /* set setter (given on value stack) */
-#define DUK_DEFPROP_FORCE                 (1U << 9)    /* force change if possible, may still fail for e.g. virtual properties */
+#define DUK_DEFPROP_RESERVED3             (1U << 3)    /* INTERNAL: reserved, internally accessor flag */
+#define DUK_DEFPROP_RESERVED4             (1U << 4)    /* INTERNAL: reserved */
+#define DUK_DEFPROP_RESERVED5             (1U << 5)    /* INTERNAL: reserved */
+#define DUK_DEFPROP_RESERVED6             (1U << 6)    /* INTERNAL: reserved */
+#define DUK_DEFPROP_RESERVED7             (1U << 7)    /* INTERNAL: reserved */
+#define DUK_DEFPROP_HAVE_SHIFT_COUNT      8            /* INTERNAL */
+#define DUK_DEFPROP_HAVE_WRITABLE         (1U << 8)    /* set/clear writable */
+#define DUK_DEFPROP_HAVE_ENUMERABLE       (1U << 9)    /* set/clear enumerable */
+#define DUK_DEFPROP_HAVE_CONFIGURABLE     (1U << 10)   /* set/clear configurable */
+#define DUK_DEFPROP_HAVE_VALUE            (1U << 11)   /* set value (given on value stack) */
+#define DUK_DEFPROP_HAVE_GETTER           (1U << 12)   /* set getter (given on value stack) */
+#define DUK_DEFPROP_HAVE_SETTER           (1U << 13)   /* set setter (given on value stack) */
+#define DUK_DEFPROP_FORCE                 (1U << 14)   /* force change if possible, may still fail for e.g. virtual properties */
+#define DUK_DEFPROP_THROW                 (1U << 15)   /* INTERNAL: throw on errors */
 #define DUK_DEFPROP_SET_WRITABLE          (DUK_DEFPROP_HAVE_WRITABLE | DUK_DEFPROP_WRITABLE)
 #define DUK_DEFPROP_CLEAR_WRITABLE        DUK_DEFPROP_HAVE_WRITABLE
 #define DUK_DEFPROP_SET_ENUMERABLE        (DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_ENUMERABLE)
@@ -818,8 +828,8 @@ DUK_EXTERNAL_DECL duk_bool_t duk_check_type_mask(duk_context *ctx, duk_idx_t idx
 
 DUK_EXTERNAL_DECL duk_bool_t duk_is_undefined(duk_context *ctx, duk_idx_t idx);
 DUK_EXTERNAL_DECL duk_bool_t duk_is_null(duk_context *ctx, duk_idx_t idx);
-#define duk_is_null_or_undefined(ctx, idx) \
-	((duk_get_type_mask((ctx), (idx)) & (DUK_TYPE_MASK_NULL | DUK_TYPE_MASK_UNDEFINED)) ? 1 : 0)
+DUK_EXTERNAL_DECL duk_bool_t duk_is_nullish(duk_context *ctx, duk_idx_t idx);
+#define duk_is_null_or_undefined(ctx, idx) duk_is_nullish((ctx), (idx))
 
 DUK_EXTERNAL_DECL duk_bool_t duk_is_boolean(duk_context *ctx, duk_idx_t idx);
 DUK_EXTERNAL_DECL duk_bool_t duk_is_number(duk_context *ctx, duk_idx_t idx);
@@ -1387,7 +1397,7 @@ DUK_EXTERNAL_DECL duk_double_t duk_components_to_time(duk_context *ctx, duk_time
  * depend on the specific ordering, so change with care.  16 bits are not
  * enough for all parts (year, specifically).
  *
- * Must be in-sync with genbuiltins.py.
+ * Must be in-sync with configure tooling.
  */
 #define DUK_DATE_IDX_YEAR           0  /* year */
 #define DUK_DATE_IDX_MONTH          1  /* month: 0 to 11 */
@@ -1407,7 +1417,7 @@ DUK_EXTERNAL_DECL duk_double_t duk_components_to_time(duk_context *ctx, duk_time
  * The unused top bits of the flags field are also used to pass values
  * to helpers (duk__get_part_helper() and duk__set_part_helper()).
  *
- * Must be in-sync with genbuiltins.py.
+ * Must be in-sync with configure tooling.
  */
 
 /* NOTE: when writing a Date provider you only need a few specific
@@ -1438,6 +1448,13 @@ DUK_EXTERNAL_DECL duk_double_t duk_components_to_time(duk_context *ctx, duk_time
  */
 #if defined(DUK_USE_ROM_OBJECTS) && defined(DUK_USE_HEAPPTR16)
 DUK_EXTERNAL_DECL const void * const duk_rom_compressed_pointers[];
+#endif
+
+/*
+ *  Fuzzilli fuzzing integration
+ */
+#if defined(DUK_USE_FUZZILLI)
+DUK_EXTERNAL_DECL void duk_assert_wrapper(duk_int_t x);
 #endif
 
 /*
