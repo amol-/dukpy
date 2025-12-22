@@ -37,7 +37,6 @@ jobs:
         env:
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_LINUX: "auto aarch64"
-          CIBW_PRERELEASE_PYTHONS: "1"
 
       - uses: actions/upload-artifact@v4
         with:
