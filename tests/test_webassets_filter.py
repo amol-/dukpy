@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import inspect
-
 from dukpy.webassets import BabelJS, TypeScript, CompileLess, BabelJSX
 from diffreport import report_diff
 from webassets.test import TempEnvironmentHelper
@@ -15,33 +13,19 @@ except:
 class PyTestTempEnvironmentHelper(TempEnvironmentHelper):
     """Adapt TempEnvironmentHelper to be compatible with PyTest"""
 
-    @staticmethod
-    def _call_hook(hook, method=None):
-        sig = inspect.signature(hook)
-        positional = [
-            p
-            for p in sig.parameters.values()
-            if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-        ]
-
-        if positional:
-            hook(method)
-        else:
-            hook()
-
     def setup_method(self, method=None):
         parent = super(PyTestTempEnvironmentHelper, self)
         if hasattr(parent, "setup_method"):
-            self._call_hook(parent.setup_method, method)
+            parent.setup_method()
         elif hasattr(parent, "setup"):
-            self._call_hook(parent.setup)
+            parent.setup()
 
     def teardown_method(self, method=None):
         parent = super(PyTestTempEnvironmentHelper, self)
         if hasattr(parent, "teardown_method"):
-            self._call_hook(parent.teardown_method, method)
+            parent.teardown_method()
         elif hasattr(parent, "teardown"):
-            self._call_hook(parent.teardown)
+            parent.teardown()
 
 
 class TestAssetsFilters(PyTestTempEnvironmentHelper):
