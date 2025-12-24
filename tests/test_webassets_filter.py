@@ -12,11 +12,20 @@ except:
 
 class PyTestTempEnvironmentHelper(TempEnvironmentHelper):
     """Adapt TempEnvironmentHelper to be compatible with PyTest"""
-    def setup_method(self):
-        self.setup()
 
-    def teardown_method(self):
-        self.teardown()
+    def setup_method(self, method=None):
+        parent = super(PyTestTempEnvironmentHelper, self)
+        if hasattr(parent, "setup_method"):
+            parent.setup_method()
+        elif hasattr(parent, "setup"):
+            parent.setup()
+
+    def teardown_method(self, method=None):
+        parent = super(PyTestTempEnvironmentHelper, self)
+        if hasattr(parent, "teardown_method"):
+            parent.teardown_method()
+        elif hasattr(parent, "teardown"):
+            parent.teardown()
 
 
 class TestAssetsFilters(PyTestTempEnvironmentHelper):
