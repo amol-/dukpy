@@ -1,99 +1,27 @@
 #!/usr/bin/env python
 import os
-from setuptools import setup, Extension
-
-import sys
-
-py_version = sys.version_info[:2]
-
-HERE = os.path.abspath(os.path.dirname(__file__))
-try:
-    with open(os.path.join(HERE, "README.rst")) as fh:
-        README = fh.read()
-except IOError:
-    README = ""
-
-INSTALL_REQUIRES = []
-if py_version == (2, 6):
-    INSTALL_REQUIRES.append("argparse")
-
-duktape = Extension(
-    "dukpy._dukpy",
-    define_macros=[
-        ("DUK_OPT_NONSTD_REGEXP_DOLLAR_ESCAPE", "1"),
-        ("DUK_OPT_OCTAL_SUPPORT", "1"),
-    ],
-    sources=[
-        os.path.join("src", "duktape", "duktape.c"),
-        os.path.join("src", "duktape", "duk_v1_compat.c"),
-        os.path.join("src", "duktape", "duk_module_duktape.c"),
-        os.path.join("src", "quickjs", "quickjs-amalgam.c"),
-        os.path.join("src", "_support.c"),
-        os.path.join("src", "pyduktape.c"),
-    ],
-    include_dirs=[
-        os.path.join(".", "src", "duktape"),
-        os.path.join(".", "src", "quickjs"),
-    ],
-)
-
-name = "dukpy"
-repo_slug = "amol-/{0}".format(name)
-repo_url = "https://github.com/{0}".format(repo_slug)
+from setuptools import Extension, setup
 
 setup(
-    name=name,
-    version='0.5.1',
-    description='Simple JavaScript interpreter for Python',
-    long_description=README,
-    keywords="javascript compiler babeljs jsx coffeescript typescript",
-    author="Alessandro Molina",
-    author_email="alessandro@molina.fyi",
-    url=repo_url,
-    project_urls={
-        "CI: AppVeyor": "https://ci.appveyor.com/project/{0}".format(repo_slug),
-        "CI: Travis": "https://travis-ci.org/{0}".format(repo_slug),
-        "GitHub: issues": "{0}/issues".format(repo_url),
-        "GitHub: repo": repo_url,
-    },
-    license="MIT",
-    packages=["dukpy", "dukpy.webassets"],
-    ext_modules=[duktape],
-    install_requires=INSTALL_REQUIRES,
-    extras_require={
-        "testing": [
-            "pytest",
-            "pytest-cov",
-            "mock",
-        ],
-        "webassets": [
-            "webassets",
-        ],
-    },
-    package_data={
-        "dukpy": [
-            "jscore/*.js",
-            "jsmodules/*.js",
-            "jsmodules/react/*.js",
-            "jsmodules/less/*/*.js",
-            "jsmodules/less/*/*/*.js",
-        ],
-    },
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.14",
-        "Programming Language :: Python :: 3.13",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: JavaScript",
+    ext_modules=[
+        Extension(
+            "dukpy._dukpy",
+            define_macros=[
+                ("DUK_OPT_NONSTD_REGEXP_DOLLAR_ESCAPE", "1"),
+                ("DUK_OPT_OCTAL_SUPPORT", "1"),
+            ],
+            sources=[
+                os.path.join("src", "duktape", "duktape.c"),
+                os.path.join("src", "duktape", "duk_v1_compat.c"),
+                os.path.join("src", "duktape", "duk_module_duktape.c"),
+                os.path.join("src", "quickjs", "quickjs-amalgam.c"),
+                os.path.join("src", "_support.c"),
+                os.path.join("src", "pyduktape.c"),
+            ],
+            include_dirs=[
+                os.path.join(".", "src", "duktape"),
+                os.path.join(".", "src", "quickjs"),
+            ],
+        )
     ],
-    entry_points={
-        "console_scripts": [
-            "dukpy-install = dukpy.install:main",
-            "dukpy = dukpy.run:main",
-        ]
-    },
 )
