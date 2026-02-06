@@ -8,7 +8,7 @@ from . import _dukpy
 
 try:
     from collections.abc import Iterable
-except ImportError:   # pragma: no cover
+except ImportError:  # pragma: no cover
     from collections import Iterable
 
 try:  # pragma: no cover
@@ -18,11 +18,12 @@ except NameError:  # pragma: no cover
     string_types = (bytes, str)
 
 
-log = logging.getLogger('dukpy.interpreter')
+log = logging.getLogger("dukpy.interpreter")
 
 
 class JSInterpreter(object):
     """JavaScript Interpreter"""
+
     def __init__(self):
         self._loader = JSModuleLoader()
         self._ctx = _dukpy.create_context()
@@ -49,16 +50,16 @@ class JSInterpreter(object):
         jscode = self._adapt_code(code)
 
         if not isinstance(jscode, bytes):
-            jscode = jscode.encode('utf-8')
+            jscode = jscode.encode("utf-8")
 
         if not isinstance(jsvars, bytes):
-            jsvars = jsvars.encode('utf-8')
+            jsvars = jsvars.encode("utf-8")
 
         res = _dukpy.eval_string(self, jscode, jsvars)
         if res is None:
             return None
 
-        return json.loads(res.decode('utf-8'))
+        return json.loads(res.decode("utf-8"))
 
     def export_function(self, name, func):
         """Exports a python function to the javascript layer with the given name.
@@ -70,26 +71,28 @@ class JSInterpreter(object):
         self._funcs[name] = func
 
     def _check_exported_function_exists(self, func):
-        func = func.decode('ascii')
+        func = func.decode("ascii")
         return func in self._funcs
 
     def _call_python(self, func, json_args):
         # Arguments came in reverse order from JS
-        func = func.decode('ascii')
-        json_args = json_args.decode('utf-8')
+        func = func.decode("ascii")
+        json_args = json_args.decode("utf-8")
 
         args = list(reversed(json.loads(json_args)))
         ret = self._funcs[func](*args)
         if ret is not None:
-            return json.dumps(ret).encode('utf-8')
+            return json.dumps(ret).encode("utf-8")
 
     def _init_process(self):
-        self.evaljs("process = {}; process.env = dukpy.environ", environ=dict(os.environ))
+        self.evaljs(
+            "process = {}; process.env = dukpy.environ", environ=dict(os.environ)
+        )
 
     def _init_console(self):
-        self.export_function('dukpy.log.info', lambda *args: log.info(' '.join(args)))
-        self.export_function('dukpy.log.error', lambda *args: log.error(' '.join(args)))
-        self.export_function('dukpy.log.warn', lambda *args: log.warn(' '.join(args)))
+        self.export_function("dukpy.log.info", lambda *args: log.info(" ".join(args)))
+        self.export_function("dukpy.log.error", lambda *args: log.error(" ".join(args)))
+        self.export_function("dukpy.log.warn", lambda *args: log.warn(" ".join(args)))
         self.evaljs("""
         ;console = {
             log: function() {
@@ -108,7 +111,7 @@ class JSInterpreter(object):
         """)
 
     def _init_require(self):
-        self.export_function('dukpy.lookup_module', self._loader.load)
+        self.export_function("dukpy.lookup_module", self._loader.load)
         self.evaljs("""
         ;Duktape.modSearch = function (id, require, exports, module) {
             var m = call_python('dukpy.lookup_module', id);
@@ -122,14 +125,14 @@ class JSInterpreter(object):
 
     def _adapt_code(self, code):
         def _read_files(f):
-            if hasattr(f, 'read'):
+            if hasattr(f, "read"):
                 return f.read()
             else:
                 return f
 
         code = _read_files(code)
-        if not isinstance(code, string_types) and hasattr(code, '__iter__'):
-            code = ';\n'.join(map(_read_files, code))
+        if not isinstance(code, string_types) and hasattr(code, "__iter__"):
+            code = ";\n".join(map(_read_files, code))
         return code
 
 
