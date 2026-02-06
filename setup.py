@@ -27,10 +27,14 @@ duktape = Extension(
         os.path.join("src", "duktape", "duktape.c"),
         os.path.join("src", "duktape", "duk_v1_compat.c"),
         os.path.join("src", "duktape", "duk_module_duktape.c"),
+        os.path.join("src", "quickjs", "quickjs-amalgam.c"),
         os.path.join("src", "_support.c"),
         os.path.join("src", "pyduktape.c"),
     ],
-    include_dirs=[os.path.join(".", "src", "duktape")],
+    include_dirs=[
+        os.path.join(".", "src", "duktape"),
+        os.path.join(".", "src", "quickjs"),
+    ],
 )
 
 name = "dukpy"
