@@ -18,7 +18,7 @@ class TestReactJS(unittest.TestCase):
                 "ReactDOM.renderToStaticMarkup(react_hello, null);",
             ]
         )
-        assert result == "<h1>Hello, world!</h1>", res
+        assert result == "<h1>Hello, world!</h1>", result
 
     def test_jsx_mixed(self):
         code = """

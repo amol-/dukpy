@@ -21,7 +21,7 @@ class FS:
         try:
             os.stat(filepath)
             return True
-        except:
+        except OSError:
             return False
 
     @classmethod

@@ -4,11 +4,6 @@ from dukpy.webassets import BabelJS, TypeScript, CompileLess, BabelJSX
 from diffreport import report_diff
 from webassets.test import TempEnvironmentHelper
 
-try:
-    from io import StringIO
-except:
-    from StringIO import StringIO
-
 
 class PyTestTempEnvironmentHelper(TempEnvironmentHelper):
     """Adapt TempEnvironmentHelper to be compatible with PyTest"""
