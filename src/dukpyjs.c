@@ -5,8 +5,6 @@
 #include "quickjs.h"
 #include "_support.h"
 
-#include <stdio.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -78,8 +76,8 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     JSValue json_result;
     JSValue global;
 
-    if (!PyArg_ParseTuple(args, CONDITIONAL_PY3("Oy#y#", "Os#s#"), &interpreter,
-                          &command, &command_len, &vars, &vars_len))
+    if (!PyArg_ParseTuple(args, "Oy#y#", &interpreter, &command, &command_len,
+                          &vars, &vars_len))
         return NULL;
 
     pyctx = PyObject_GetAttrString(interpreter, "_ctx");
@@ -170,7 +168,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    result = Py_BuildValue(CONDITIONAL_PY3("y", "s"), output);
+    result = Py_BuildValue("y", output);
     JS_FreeCString(ctx, output);
     Py_XDECREF(pyctx);
 
@@ -186,8 +184,6 @@ static PyMethodDef DukPy_methods[] = {
 
 static char DukPy_doc[] = "Provides Javascript support to Python through the QuickJS library.";
 
-
-#if PY_MAJOR_VERSION >= 3
 
 static struct PyModuleDef dukpymodule = {
     PyModuleDef_HEAD_INIT,
@@ -209,22 +205,6 @@ PyInit__dukpy()
     PyModule_AddObject(module, "JSRuntimeError", DukPyError);
     return module;
 }
-
-#else
-
-PyMODINIT_FUNC 
-init_dukpy(void)
-{
-    PyObject *module = Py_InitModule3("_dukpy", DukPy_methods, DukPy_doc);
-    if (module == NULL)
-       return;
-
-    DukPyError = PyErr_NewException("_dukpy.JSRuntimeError", NULL, NULL);
-    Py_INCREF(DukPyError);
-    PyModule_AddObject(module, "JSRuntimeError", DukPyError);
-}
-
-#endif
 
 #ifdef __cplusplus
 }

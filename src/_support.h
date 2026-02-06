@@ -18,11 +18,4 @@ JSModuleDef *dukpy_module_loader(JSContext *ctx, const char *module_name, void *
 int dukpy_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
                                  const char *module_name, int is_main);
 
-#if PY_MAJOR_VERSION >= 3
-#define CONDITIONAL_PY3(three, two) (three)
-#else
-#define CONDITIONAL_PY3(three, two) (two)
-#endif
-
-
 #endif

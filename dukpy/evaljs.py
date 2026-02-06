@@ -7,16 +7,7 @@ import posixpath
 from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
 
-try:
-    from collections.abc import Iterable
-except ImportError:  # pragma: no cover
-    from collections import Iterable
-
-try:  # pragma: no cover
-    unicode
-    string_types = (str, unicode)
-except NameError:  # pragma: no cover
-    string_types = (bytes, str)
+string_types = (bytes, str)
 
 
 log = logging.getLogger("dukpy.interpreter")

@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <Python.h>
-#include "capsulethunk.h"
 #include "_support.h"
 
 static char const * const CONTEXT_CAPSULE_NAME = "DUKPY_CONTEXT_CAPSULE";
@@ -77,8 +76,7 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
         return JS_EXCEPTION;
     }
 
-    ret = PyObject_CallMethod(interpreter, "_check_exported_function_exists",
-                              CONDITIONAL_PY3("y", "s"), pyfuncname);
+    ret = PyObject_CallMethod(interpreter, "_check_exported_function_exists", "y", pyfuncname);
     if (ret == NULL) {
         JSValue exception = JS_ThrowInternalError(ctx, "Failed to resolve Python function %s",
                                                   pyfuncname);
@@ -94,8 +92,7 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
     }
     Py_DECREF(ret);
 
-    ret = PyObject_CallMethod(interpreter, "_call_python", CONDITIONAL_PY3("yy", "ss"),
-                              pyfuncname, args);
+    ret = PyObject_CallMethod(interpreter, "_call_python", "yy", pyfuncname, args);
     JS_FreeCString(ctx, args);
 
     if (ret == NULL) {
