@@ -12,7 +12,7 @@ dukpy
 
 
 DukPy is a simple javascript interpreter for Python built on top of
-duktape engine **without any external dependency**.
+QuickJS engine **without any external dependency**.
 It comes with a bunch of common transpilers built-in for convenience:
 
     - *CoffeeScript*

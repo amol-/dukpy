@@ -113,36 +113,42 @@ class JSInterpreter(object):
 
     def _init_require(self):
         self.export_function("dukpy.load_module", self._load_module)
+        self.export_function("dukpy.normalize_module", self._normalize_module)
         self.evaljs("""
         ;(function() {
             var _dukpy_modules = {};
-            function _dukpy_require(id) {
-                if (_dukpy_modules[id]) {
-                    return _dukpy_modules[id].exports;
+            function _dukpy_make_require(base) {
+                function _dukpy_require(id) {
+                    var resolved = call_python('dukpy.normalize_module', base || '', id) || id;
+                    if (_dukpy_modules[resolved]) {
+                        return _dukpy_modules[resolved].exports;
+                    }
+                    var m = call_python('dukpy.load_module', resolved);
+                    if (!m || !m[1]) {
+                        throw new Error('cannot find module: ' + id);
+                    }
+                    var module = { id: m[0], exports: {} };
+                    _dukpy_modules[module.id] = module;
+                    if (module.id !== resolved) {
+                        _dukpy_modules[resolved] = module;
+                    }
+                    module.require = _dukpy_make_require(module.id);
+                    var exports = module.exports;
+                    var func = new Function('require', 'exports', 'module', m[1]);
+                    func(module.require, exports, module);
+                    return module.exports;
                 }
-                var m = call_python('dukpy.load_module', id);
-                if (!m || !m[1]) {
-                    throw new Error('cannot find module: ' + id);
-                }
-                var module = { id: m[0], exports: {} };
-                _dukpy_modules[module.id] = module;
-                if (module.id !== id) {
-                    _dukpy_modules[id] = module;
-                }
-                var exports = module.exports;
-                var func = new Function('require', 'exports', 'module', m[1]);
-                func(_dukpy_require, exports, module);
-                return module.exports;
+                _dukpy_require.id = base || '';
+                return _dukpy_require;
             }
-            globalThis.require = _dukpy_require;
+            globalThis.require = _dukpy_make_require('');
         })();
 """)
 
     def _normalize_module(self, base_name, module_name):
         if module_name.startswith(".") and base_name:
-            module_name = posixpath.normpath(
-                posixpath.join(base_name.rsplit("/", 1)[0] if "/" in base_name else "", module_name)
-            )
+            base_dir = base_name.rsplit("/", 1)[0] if "/" in base_name else base_name
+            module_name = posixpath.normpath(posixpath.join(base_dir, module_name))
         module_id, _ = self._loader.lookup(module_name)
         return module_id or module_name
 
