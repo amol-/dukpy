@@ -2,6 +2,7 @@ from __future__ import print_function
 import json
 import os
 import logging
+import posixpath
 
 from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
@@ -111,17 +112,42 @@ class JSInterpreter(object):
         """)
 
     def _init_require(self):
-        self.export_function("dukpy.lookup_module", self._loader.load)
+        self.export_function("dukpy.load_module", self._load_module)
         self.evaljs("""
-        ;Duktape.modSearch = function (id, require, exports, module) {
-            var m = call_python('dukpy.lookup_module', id);
-            if (!m || !m[1]) {
-                throw new Error('cannot find module: ' + id);
+        ;(function() {
+            var _dukpy_modules = {};
+            function _dukpy_require(id) {
+                if (_dukpy_modules[id]) {
+                    return _dukpy_modules[id].exports;
+                }
+                var m = call_python('dukpy.load_module', id);
+                if (!m || !m[1]) {
+                    throw new Error('cannot find module: ' + id);
+                }
+                var module = { id: m[0], exports: {} };
+                _dukpy_modules[module.id] = module;
+                if (module.id !== id) {
+                    _dukpy_modules[id] = module;
+                }
+                var exports = module.exports;
+                var func = new Function('require', 'exports', 'module', m[1]);
+                func(_dukpy_require, exports, module);
+                return module.exports;
             }
-            _require_set_module_id(require, m[0]);
-            return m[1];
-        };
+            globalThis.require = _dukpy_require;
+        })();
 """)
+
+    def _normalize_module(self, base_name, module_name):
+        if module_name.startswith(".") and base_name:
+            module_name = posixpath.normpath(
+                posixpath.join(base_name.rsplit("/", 1)[0] if "/" in base_name else "", module_name)
+            )
+        module_id, _ = self._loader.lookup(module_name)
+        return module_id or module_name
+
+    def _load_module(self, module_name):
+        return self._loader.load(module_name)
 
     def _adapt_code(self, code):
         def _read_files(f):
