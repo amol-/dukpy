@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dukpy"
+version = "0.5.0"
+description = "Simple JavaScript interpreter for Python"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+keywords = ["javascript", "compiler", "babeljs", "jsx", "coffeescript", "typescript"]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Alessandro Molina", email = "alessandro@molina.fyi" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: JavaScript",
+]
+dependencies = ["argparse; python_version == '2.6'"]
+
+[project.optional-dependencies]
+testing = ["pytest", "pytest-cov", "mock"]
+webassets = ["webassets"]
+
+[project.scripts]
+dukpy-install = "dukpy.install:main"
+dukpy = "dukpy.run:main"
+
+[project.urls]
+Homepage = "https://github.com/amol-/dukpy"
+
+[tool.setuptools]
+packages = ["dukpy", "dukpy.webassets"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+dukpy = [
+  "jscore/**/*.js",
+  "jsmodules/**/*.js",
+]

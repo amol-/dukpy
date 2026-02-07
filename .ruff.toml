@@ -1,0 +1,7 @@
+line-length = 88
+target-version = "py39"
+extend-exclude = ["src/duktape", "dukpy/jsmodules", "dukpy/jscore"]
+
+[lint]
+select = ["E", "F"]
+ignore = ["E501"]
