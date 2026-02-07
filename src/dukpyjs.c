@@ -14,18 +14,30 @@ static PyObject *DukPyError;
 static PyObject *raise_js_exception(JSContext *ctx) {
     JSValue exception = JS_GetException(ctx);
     JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
-    const char *message = NULL;
+    const char *stack_message = NULL;
+    const char *exception_message = NULL;
 
     if (!JS_IsUndefined(stack) && !JS_IsNull(stack)) {
-        message = JS_ToCString(ctx, stack);
-    }
-    if (!message) {
-        message = JS_ToCString(ctx, exception);
+        stack_message = JS_ToCString(ctx, stack);
     }
 
-    PyErr_SetString(DukPyError, message ? message : "JavaScript Error");
-    if (message) {
-        JS_FreeCString(ctx, message);
+    exception_message = JS_ToCString(ctx, exception);
+
+    if (stack_message && exception_message) {
+        PyErr_Format(DukPyError, "%s\n%s", exception_message, stack_message);
+    } else if (stack_message) {
+        PyErr_SetString(DukPyError, stack_message);
+    } else if (exception_message) {
+        PyErr_SetString(DukPyError, exception_message);
+    } else {
+        PyErr_SetString(DukPyError, "JavaScript Error");
+    }
+
+    if (stack_message) {
+        JS_FreeCString(ctx, stack_message);
+    }
+    if (exception_message) {
+        JS_FreeCString(ctx, exception_message);
     }
     JS_FreeValue(ctx, stack);
     JS_FreeValue(ctx, exception);
@@ -76,8 +88,6 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     JSValue jsvars;
     JSValue json_result;
     JSValue global;
-    int eval_is_null;
-    int eval_is_undefined;
 
     if (!PyArg_ParseTuple(args, "Oy#y#|p", &interpreter, &command, &command_len,
                           &vars, &vars_len, &eval_as_module))
@@ -144,13 +154,11 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return raise_js_exception(ctx);
     }
 
-    eval_is_null = JS_IsNull(eval_result);
-    eval_is_undefined = JS_IsUndefined(eval_result);
-    if (eval_is_null || eval_is_undefined) {
+    if (JS_IsUndefined(eval_result)) {
         JS_FreeValue(ctx, eval_result);
-        result = Py_BuildValue("y", "{}");
         Py_XDECREF(pyctx);
-        return result;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
 
     json_result = JS_JSONStringify(ctx, eval_result, JS_UNDEFINED, JS_UNDEFINED);

@@ -4,6 +4,8 @@ from .nodelike import NodeLikeInterpreter
 def less_compile(source, options=None):
     """Compiles the given ``source`` from LESS to CSS"""
     options = options or {}
+    if "syncImport" not in options:
+        options["syncImport"] = True
     res = NodeLikeInterpreter().evaljs(
         (
             'var result = null;var less = require("less/less-node");',

@@ -67,11 +67,10 @@ class JSInterpreter(object):
         return func in self._funcs
 
     def _call_python(self, func, json_args):
-        # Arguments came in reverse order from JS
         func = func.decode("ascii")
         json_args = json_args.decode("utf-8")
 
-        args = list(reversed(json.loads(json_args)))
+        args = json.loads(json_args)
         ret = self._funcs[func](*args)
         if ret is not None:
             return json.dumps(ret).encode("utf-8")
