@@ -69,6 +69,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     size_t command_len;
     const char *vars;
     size_t vars_len;
+    int eval_as_module = 0;
     const char *output;
     PyObject *result;
     JSValue eval_result;
@@ -78,8 +79,8 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     int eval_is_null;
     int eval_is_undefined;
 
-    if (!PyArg_ParseTuple(args, "Oy#y#", &interpreter, &command, &command_len,
-                          &vars, &vars_len))
+    if (!PyArg_ParseTuple(args, "Oy#y#|p", &interpreter, &command, &command_len,
+                          &vars, &vars_len, &eval_as_module))
         return NULL;
 
     pyctx = PyObject_GetAttrString(interpreter, "_ctx");
@@ -114,7 +115,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
                       JS_NewCFunction(ctx, require_set_module_id, "_require_set_module_id", 2));
     JS_FreeValue(ctx, global);
 
-    if (JS_DetectModule(command, command_len)) {
+    if (eval_as_module) {
         JSValue func_val = JS_Eval(ctx, command, command_len, "<dukpy>",
                                    JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
         if (JS_IsException(func_val)) {
