@@ -10,7 +10,9 @@ dukpy
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
    :target: https://pypi.org/p/dukpy
 
-<img align="left" width="100px" src="dukpy_logo.png" alt="DukPy logo">
+.. raw:: html
+
+    <img align="left" width="100px" src="dukpy_logo.png" alt="DukPy logo">
 
 
 DukPy is a simple javascript interpreter for Python built on top of
