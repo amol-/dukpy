@@ -161,7 +161,6 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
 
     if (JS_IsUndefined(json_result)) {
         JS_FreeValue(ctx, json_result);
-        JS_FreeValue(ctx, eval_result);
         Py_XDECREF(pyctx);
         PyErr_SetString(DukPyError, "Invalid Result Value");
         return NULL;
