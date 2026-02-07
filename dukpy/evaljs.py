@@ -86,20 +86,21 @@ class JSInterpreter(object):
         self.export_function("dukpy.log.error", lambda *args: log.error(" ".join(args)))
         self.export_function("dukpy.log.warn", lambda *args: log.warn(" ".join(args)))
         self.evaljs("""
-        ;console = {
-            log: function() {
-                call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
-            },
-            info: function() {
-                call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
-            },
-            warn: function() {
-                call_python('dukpy.log.warn', Array.prototype.join.call(arguments, ' '));
-            },
-            error: function() {
-                call_python('dukpy.log.error', Array.prototype.join.call(arguments, ' '));
-            }
-        };
+        ;(function() {
+            globalThis.console = globalThis.console || {};
+            globalThis.console.log = function() {
+                globalThis.call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
+            };
+            globalThis.console.info = function() {
+                globalThis.call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
+            };
+            globalThis.console.warn = function() {
+                globalThis.call_python('dukpy.log.warn', Array.prototype.join.call(arguments, ' '));
+            };
+            globalThis.console.error = function() {
+                globalThis.call_python('dukpy.log.error', Array.prototype.join.call(arguments, ' '));
+            };
+        })();
         """)
 
     def _init_require(self):

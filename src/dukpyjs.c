@@ -75,6 +75,8 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     JSValue jsvars;
     JSValue json_result;
     JSValue global;
+    int eval_is_null;
+    int eval_is_undefined;
 
     if (!PyArg_ParseTuple(args, "Oy#y#", &interpreter, &command, &command_len,
                           &vars, &vars_len))
@@ -141,6 +143,15 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return raise_js_exception(ctx);
     }
 
+    eval_is_null = JS_IsNull(eval_result);
+    eval_is_undefined = JS_IsUndefined(eval_result);
+    if (eval_is_null || eval_is_undefined) {
+        JS_FreeValue(ctx, eval_result);
+        result = Py_BuildValue("y", "{}");
+        Py_XDECREF(pyctx);
+        return result;
+    }
+
     json_result = JS_JSONStringify(ctx, eval_result, JS_UNDEFINED, JS_UNDEFINED);
     JS_FreeValue(ctx, eval_result);
     if (JS_IsException(json_result)) {
@@ -148,15 +159,11 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
         return raise_js_exception(ctx);
     }
 
-    if (JS_IsNull(json_result)) {
-        JS_FreeValue(ctx, json_result);
-        json_result = JS_NewString(ctx, "{}");
-    }
-
     if (JS_IsUndefined(json_result)) {
         JS_FreeValue(ctx, json_result);
-        PyErr_SetString(DukPyError, "Invalid Result Value");
+        JS_FreeValue(ctx, eval_result);
         Py_XDECREF(pyctx);
+        PyErr_SetString(DukPyError, "Invalid Result Value");
         return NULL;
     }
 
