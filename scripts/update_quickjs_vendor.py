@@ -32,7 +32,10 @@ def main() -> None:
     shutil.rmtree(quickjs_dir, ignore_errors=True)
     quickjs_dir.mkdir(parents=True)
 
-    with urllib.request.urlopen(url) as response, zipfile.ZipFile(io.BytesIO(response.read())) as archive:
+    with (
+        urllib.request.urlopen(url) as response,
+        zipfile.ZipFile(io.BytesIO(response.read())) as archive,
+    ):
         names = [name for name in archive.namelist() if name.endswith((".c", ".h"))]
         if not any(name.endswith(".c") for name in names):
             raise SystemExit("No .c files found in the amalgamated zip.")
@@ -42,7 +45,9 @@ def main() -> None:
             (quickjs_dir / Path(name).name).write_bytes(archive.read(name))
 
     (quickjs_dir / "VERSION").write_text(f"{version}\n", encoding="utf-8")
-    print(f"Updated {quickjs_dir} with: {', '.join(sorted(Path(name).name for name in names))}")
+    print(
+        f"Updated {quickjs_dir} with: {', '.join(sorted(Path(name).name for name in names))}"
+    )
     print(f"Recorded version: {version}")
 
 
