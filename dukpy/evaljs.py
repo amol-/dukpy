@@ -8,13 +8,26 @@ from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
 
 string_types = (bytes, str)
+_RUNTIME_DIR = os.path.dirname(__file__)
+_PROCESS_RUNTIME = os.path.join(_RUNTIME_DIR, "process_runtime.js")
+_CONSOLE_RUNTIME = os.path.join(_RUNTIME_DIR, "console_runtime.js")
+_COMMONJS_RUNTIME = os.path.join(_RUNTIME_DIR, "commonjs_runtime.js")
 
 
 log = logging.getLogger("dukpy.interpreter")
 
 
 class JSInterpreter(object):
-    """JavaScript Interpreter"""
+    """Persistent QuickJS-backed interpreter.
+
+    This Python boundary adapts host inputs: code may be read from files or the
+    legacy iterable form, keyword arguments are JSON-encoded onto the JavaScript
+    ``dukpy`` global, and JSON results are decoded back to Python values.
+    JavaScript syntax decisions stay below this layer: ``_dukpy.eval_string``
+    receives the source bytes plus the explicit script/module mode and delegates
+    parsing, module compilation, evaluation, job draining, and result
+    serialization to QuickJS.
+    """
 
     def __init__(self):
         self._loader = JSModuleLoader()
@@ -30,14 +43,29 @@ class JSInterpreter(object):
         return self._loader
 
     def evaljs(self, code, **kwargs):
-        """Runs JavaScript code in the context of the interpreter.
+        """Run JavaScript code as a global script in this interpreter.
 
-        All arguments will be converted to plain javascript objects
-        through the JSON encoder and will be available in `dukpy`
-        global object.
-
-        Returns the last object on javascript stack.
+        All arguments are converted to plain JavaScript values through the JSON
+        encoder and are available on the ``dukpy`` global object. Python does not
+        inspect ``code`` to classify JavaScript syntax; QuickJS parses and
+        evaluates it as a script.
         """
+        return self._evaljs(code, False, "<dukpy>", kwargs)
+
+    def evaljs_module(self, code, module_name="<dukpy>", **kwargs):
+        """Run JavaScript code as a native ES module in this interpreter.
+
+        The module name is passed to QuickJS for ``import.meta.url`` and as the
+        base for resolving top-level relative imports. All user data keyword
+        arguments are converted to plain JavaScript values through the JSON
+        encoder and are available on the ``dukpy`` global object. This explicit
+        module API keeps ``evaljs`` keyword arguments reserved for user data and
+        avoids Python-side source scanning for module syntax.
+        """
+        return self._evaljs(code, True, module_name, kwargs)
+
+    def _evaljs(self, code, eval_as_module, module_name, kwargs):
+        """Adapt Python values, then cross the native QuickJS boundary."""
         jsvars = json.dumps(kwargs)
         jscode = self._adapt_code(code)
 
@@ -47,7 +75,7 @@ class JSInterpreter(object):
         if not isinstance(jsvars, bytes):
             jsvars = jsvars.encode("utf-8")
 
-        res = _dukpy.eval_string(self, jscode, jsvars)
+        res = _dukpy.eval_string(self, jscode, jsvars, eval_as_module, module_name)
         if res is None:
             return None
 
@@ -63,11 +91,11 @@ class JSInterpreter(object):
         self._funcs[name] = func
 
     def _check_exported_function_exists(self, func):
-        func = func.decode("ascii")
+        func = func.decode("utf-8")
         return func in self._funcs
 
     def _call_python(self, func, json_args):
-        func = func.decode("ascii")
+        func = func.decode("utf-8")
         json_args = json_args.decode("utf-8")
 
         args = json.loads(json_args)
@@ -76,69 +104,27 @@ class JSInterpreter(object):
             return json.dumps(ret).encode("utf-8")
 
     def _init_process(self):
-        self.evaljs(
-            "process = {}; process.env = dukpy.environ", environ=dict(os.environ)
-        )
+        self._eval_runtime_shim(_PROCESS_RUNTIME, environ=dict(os.environ))
 
     def _init_console(self):
         self.export_function("dukpy.log.info", lambda *args: log.info(" ".join(args)))
         self.export_function("dukpy.log.error", lambda *args: log.error(" ".join(args)))
         self.export_function("dukpy.log.warn", lambda *args: log.warn(" ".join(args)))
-        self.evaljs("""
-        ;(function() {
-            globalThis.console = globalThis.console || {};
-            globalThis.console.log = function() {
-                globalThis.call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
-            };
-            globalThis.console.info = function() {
-                globalThis.call_python('dukpy.log.info', Array.prototype.join.call(arguments, ' '));
-            };
-            globalThis.console.warn = function() {
-                globalThis.call_python('dukpy.log.warn', Array.prototype.join.call(arguments, ' '));
-            };
-            globalThis.console.error = function() {
-                globalThis.call_python('dukpy.log.error', Array.prototype.join.call(arguments, ' '));
-            };
-        })();
-        """)
+        self._eval_runtime_shim(_CONSOLE_RUNTIME)
 
     def _init_require(self):
         self.export_function("dukpy.load_module", self._load_module)
         self.export_function("dukpy.normalize_module", self._normalize_module)
-        self.evaljs("""
-        ;(function() {
-            var _dukpy_modules = {};
-            function _dukpy_make_require(base) {
-                function _dukpy_require(id) {
-                    var resolved = call_python('dukpy.normalize_module', base || '', id) || id;
-                    if (_dukpy_modules[resolved]) {
-                        return _dukpy_modules[resolved].exports;
-                    }
-                    var m = call_python('dukpy.load_module', resolved);
-                    if (!m || !m[1]) {
-                        throw new Error('cannot find module: ' + id);
-                    }
-                    var module = { id: m[0], exports: {} };
-                    _dukpy_modules[module.id] = module;
-                    if (module.id !== resolved) {
-                        _dukpy_modules[resolved] = module;
-                    }
-                    module.require = _dukpy_make_require(module.id);
-                    var exports = module.exports;
-                    var func = new Function('require', 'exports', 'module', m[1]);
-                    func(module.require, exports, module);
-                    return module.exports;
-                }
-                _dukpy_require.id = base || '';
-                return _dukpy_require;
-            }
-            globalThis.require = _dukpy_make_require('');
-        })();
-""")
+        self._eval_runtime_shim(_COMMONJS_RUNTIME)
+
+    def _eval_runtime_shim(self, path, **kwargs):
+        """Evaluate a reviewed host-runtime JavaScript asset."""
+        with open(path, encoding="utf-8") as runtime:
+            self.evaljs(runtime, **kwargs)
 
     def _normalize_module(self, base_name, module_name):
         if module_name.startswith(".") and base_name:
-            base_dir = base_name.rsplit("/", 1)[0] if "/" in base_name else base_name
+            base_dir = base_name.rsplit("/", 1)[0] if "/" in base_name else ""
             module_name = posixpath.normpath(posixpath.join(base_dir, module_name))
         module_id, _ = self._loader.lookup(module_name)
         return module_id or module_name
@@ -147,6 +133,14 @@ class JSInterpreter(object):
         return self._loader.load(module_name)
 
     def _adapt_code(self, code):
+        """Adapt legacy source containers without interpreting JavaScript.
+
+        File-like objects are read once. Iterable input is the historical DukPy
+        compatibility form: each fragment is read if needed, the fragments are
+        joined with ``;\n``, and QuickJS then parses the combined script. The
+        inserted semicolon is part of the public legacy contract rather than a
+        JavaScript syntax decision made by Python.
+        """
         def _read_files(f):
             if hasattr(f, "read"):
                 return f.read()
@@ -160,5 +154,18 @@ class JSInterpreter(object):
 
 
 def evaljs(code, **kwargs):
-    """Evaluates the given ``code`` as JavaScript and returns the result"""
+    """Evaluate ``code`` as a QuickJS global script in a fresh interpreter.
+
+    Python adapts inputs and JSON keyword data, then the native QuickJS boundary
+    parses, evaluates, drains jobs, and serializes the result.
+    """
     return JSInterpreter().evaljs(code, **kwargs)
+
+
+def evaljs_module(code, module_name="<dukpy>", **kwargs):
+    """Evaluate ``code`` as a QuickJS native ES module in a fresh interpreter.
+
+    ``module_name`` is explicit host intent for QuickJS; Python does not scan
+    source text to infer module syntax.
+    """
+    return JSInterpreter().evaljs_module(code, module_name=module_name, **kwargs)

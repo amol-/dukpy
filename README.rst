@@ -15,8 +15,12 @@ dukpy
     <img align="left" width="100px" src="dukpy_logo.png" alt="DukPy logo">
 
 
-DukPy is a simple javascript interpreter for Python built on top of
-QuickJS engine **without any external dependency**.
+DukPy is a simple JavaScript interpreter for Python **without any external
+runtime dependency**.
+
+The name comes from DukPy's original Duktape-based implementation and is kept
+for package compatibility.
+
 It comes with a bunch of common transpilers built-in for convenience:
 
     - *CoffeeScript*
@@ -203,6 +207,37 @@ resulting value as far as it is possible to encode it in JSON.
 
 If execution fails a ``dukpy.JSRuntimeError`` exception is raised
 with the failure reason.
+
+Evaluating ES modules
+~~~~~~~~~~~~~~~~~~~~~
+
+Native ES module syntax can be evaluated with ``dukpy.evaljs_module`` or,
+when reusing an interpreter, ``JSInterpreter.evaljs_module``:
+
+.. code:: python
+
+    >>> import dukpy
+    >>> jsi = dukpy.JSInterpreter()
+    >>> jsi.evaljs_module("export const answer = dukpy.value + 1; globalThis.answer = answer;", value=41)
+    {}
+    >>> jsi.evaljs("answer")
+    42
+
+Pass ``module_name`` when a module needs a caller-visible ``import.meta.url``
+or a base path for top-level relative imports.
+The module-mode API is intentionally separate from ``evaljs`` so keyword
+arguments remain user data exposed on the JavaScript ``dukpy`` object.
+
+DukPy classifies module files only from metadata: ``.mjs`` files are native ES
+modules, ``.cjs`` files are CommonJS, and ``.js`` files follow the nearest
+``package.json`` ``type`` of ``module`` or ``commonjs`` before defaulting to
+CommonJS. The loader never scans source text for ``import``, ``export``,
+``await``, comments, strings, or identifiers when choosing a module format.
+
+When ES modules import files classified as CommonJS, DukPy exposes a minimal
+synthetic namespace: ``default`` is ``module.exports``, and the only named
+exports are ``module``, ``exports``, and ``require``. DukPy does not infer named
+exports from CommonJS source; use a default import for CommonJS API objects.
 
 Passing Arguments
 ~~~~~~~~~~~~~~~~~
