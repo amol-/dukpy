@@ -113,7 +113,7 @@ class JSInterpreter(object):
         self._eval_runtime_shim(_CONSOLE_RUNTIME)
 
     def _init_require(self):
-        self.export_function("dukpy.load_module", self._load_module)
+        self.export_function("dukpy.load_module", self._loader.load)
         self.export_function("dukpy.normalize_module", self._normalize_module)
         self._eval_runtime_shim(_COMMONJS_RUNTIME)
 
@@ -128,9 +128,6 @@ class JSInterpreter(object):
             module_name = posixpath.normpath(posixpath.join(base_dir, module_name))
         module_id, _ = self._loader.lookup(module_name)
         return module_id or module_name
-
-    def _load_module(self, module_name):
-        return self._loader.load(module_name)
 
     def _adapt_code(self, code):
         """Adapt legacy source containers without interpreting JavaScript.

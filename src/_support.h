@@ -1,6 +1,7 @@
-#ifndef __DUKPY_SUPPORT_H__
-#define __DUKPY_SUPPORT_H__
+#ifndef DUKPY_SUPPORT_H
+#define DUKPY_SUPPORT_H
 
+#include <Python.h>
 #include "quickjs.h"
 
 /* Rejected promises keep duplicated QuickJS values alive until the eval that

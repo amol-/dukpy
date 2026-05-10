@@ -336,6 +336,7 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     JSValue jsvars;
     JSValue json_result = JS_UNDEFINED;
     JSValue global;
+    JSValue call_python = JS_UNDEFINED;
     JSValue deferred_exception = JS_UNDEFINED;
     int has_deferred_exception = 0;
     int eval_started = 0;
@@ -398,9 +399,28 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     }
 
     global = JS_GetGlobalObject(ctx);
-    JS_SetPropertyStr(ctx, global, "dukpy", jsvars);
-    JS_SetPropertyStr(ctx, global, "call_python",
-                      JS_NewCFunction(ctx, call_py_function, "call_python", 1));
+    if (JS_SetPropertyStr(ctx, global, "dukpy", jsvars) < 0) {
+        jsvars = JS_UNDEFINED;
+        JS_FreeValue(ctx, global);
+        exception_ctx = ctx;
+        goto finalize;
+    }
+    jsvars = JS_UNDEFINED;
+
+    call_python = JS_NewCFunction(ctx, call_py_function, "call_python", 1);
+    if (JS_IsException(call_python)) {
+        call_python = JS_UNDEFINED;
+        JS_FreeValue(ctx, global);
+        exception_ctx = ctx;
+        goto finalize;
+    }
+    if (JS_SetPropertyStr(ctx, global, "call_python", call_python) < 0) {
+        call_python = JS_UNDEFINED;
+        JS_FreeValue(ctx, global);
+        exception_ctx = ctx;
+        goto finalize;
+    }
+    call_python = JS_UNDEFINED;
     JS_FreeValue(ctx, global);
 
     /* Source execution is either the native module pipeline or a global script;
@@ -548,8 +568,18 @@ PyInit__dukpy()
        return NULL;
 
     DukPyError = PyErr_NewException("_dukpy.JSRuntimeError", NULL, NULL);
+    if (DukPyError == NULL) {
+        Py_DECREF(module);
+        return NULL;
+    }
+
     Py_INCREF(DukPyError);
-    PyModule_AddObject(module, "JSRuntimeError", DukPyError);
+    if (PyModule_AddObject(module, "JSRuntimeError", DukPyError) < 0) {
+        Py_DECREF(DukPyError);
+        Py_CLEAR(DukPyError);
+        Py_DECREF(module);
+        return NULL;
+    }
     return module;
 }
 

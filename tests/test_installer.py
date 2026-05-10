@@ -46,6 +46,18 @@ class TestPackageInstaller(unittest.TestCase):
                 dukpy_install.main()
         assert os.path.exists(os.path.join(self.tmpdir, "offline-package"))
 
+    def test_install_selects_latest_version_and_require_observes_it(self):
+        self._assert_installs_version(None, "15.0.1")
+
+    def test_install_selects_exact_version_and_require_observes_it(self):
+        self._assert_installs_version("0.2.4", "0.2.4")
+
+    def test_install_selects_tilde_version_and_require_observes_it(self):
+        self._assert_installs_version("~0.14.x", "0.14.8")
+
+    def test_install_selects_caret_version_and_require_observes_it(self):
+        self._assert_installs_version("^0.x", "0.14.8")
+
     def test_install_command_missing_args(self):
         with self.assertRaises(SystemExit):
             with mock.patch.object(sys, "argv", ["dukpy-install"]):
@@ -278,6 +290,47 @@ class TestPackageInstaller(unittest.TestCase):
             )
         }
 
+    def _assert_installs_version(self, requested_version, expected_version):
+        with self._patch_npm(self._versioned_registry(), self._versioned_tarballs()):
+            dukpy.install_jspackage("versioned-package", requested_version, self.tmpdir)
+
+        jsi = dukpy.JSInterpreter()
+        jsi.loader.register_path(self.tmpdir)
+        assert jsi.evaljs("require('versioned-package').version") == expected_version
+
+    def _versioned_registry(self):
+        versions = {
+            "0.2.3": {},
+            "0.2.4": {},
+            "0.2.5": {},
+            "0.14.7": {},
+            "0.14.8": {},
+            "15.0.0": {},
+            "15.0.1": {},
+        }
+        for version in ("0.2.4", "0.14.8", "15.0.1"):
+            versions[version] = {
+                "dist": {"tarball": self._versioned_tarball_url(version)}
+            }
+        return {"versioned-package": {"versions": versions}}
+
+    def _versioned_tarballs(self):
+        return {
+            self._versioned_tarball_url(version): self._tarball(
+                {
+                    "package.json": json.dumps({"main": "index.js"}),
+                    "index.js": f"module.exports = {{version: '{version}'}};",
+                }
+            )
+            for version in ("0.2.4", "0.14.8", "15.0.1")
+        }
+
+    def _versioned_tarball_url(self, version):
+        return (
+            "https://registry.npmjs.org/versioned-package/-/"
+            f"versioned-package-{version}.tgz"
+        )
+
     def _patch_npm(self, registries, tarballs):
         urls = {}
         for name, info in registries.items():
@@ -306,90 +359,3 @@ class TestPackageInstaller(unittest.TestCase):
                 tb.addfile(info, BytesIO(data))
         return tarball.getvalue()
 
-
-class TestVersionResolver(unittest.TestCase):
-    VERSIONS = {
-        "0.14.5": {},
-        "0.13.0-rc2": {},
-        "0.13.0-rc1": {},
-        "0.14.0-beta3": {},
-        "0.2.6": {},
-        "0.2.5": {},
-        "0.2.4": {},
-        "0.2.3": {},
-        "0.2.2": {},
-        "0.2.1": {},
-        "0.2.0": {},
-        "0.1.2": {},
-        "0.3.5": {},
-        "0.10.0-rc1": {},
-        "0.14.0": {},
-        "0.10.0": {},
-        "0.13.0-beta.2": {},
-        "0.0.1": {},
-        "0.14.3": {},
-        "0.0.3": {},
-        "0.0.2": {},
-        "0.6.3": {},
-        "0.6.2": {},
-        "0.3.0": {},
-        "0.6.0": {},
-        "0.11.0": {},
-        "0.11.1": {},
-        "0.3.4": {},
-        "0.7.1": {},
-        "15.0.0": {},
-        "15.0.1": {},
-        "0.12.1": {},
-        "0.12.0": {},
-        "0.15.0-alpha.1": {},
-        "0.5.1": {},
-        "0.5.0": {},
-        "0.13.3": {},
-        "0.5.2": {},
-        "0.13.1": {},
-        "0.14.0-beta2": {},
-        "0.14.4": {},
-        "0.14.7": {},
-        "0.14.0-beta1": {},
-        "0.14.1": {},
-        "15.0.0-rc.2": {},
-        "15.0.0-rc.1": {},
-        "0.14.2": {},
-        "0.14.8": {},
-        "0.9.0": {},
-        "0.8.0": {},
-        "0.14.0-rc1": {},
-        "0.12.0-rc1": {},
-        "0.6.1": {},
-        "0.12.2": {},
-        "0.11.2": {},
-        "0.9.0-rc1": {},
-        "0.13.2": {},
-        "0.14.0-alpha2": {},
-        "0.14.0-alpha1": {},
-        "0.14.0-alpha3": {},
-        "0.13.0-beta.1": {},
-        "0.13.0-alpha.2": {},
-        "0.13.0-alpha.1": {},
-        "0.13.0": {},
-        "0.7.0": {},
-        "0.14.6": {},
-        "0.11.0-rc1": {},
-    }
-
-    def test_tilde_versioning(self):
-        ver = dukpy_install._resolve_version("~0.14.x", self.VERSIONS)
-        assert ver == "0.14.8", ver
-
-    def test_caret_versioning(self):
-        ver = dukpy_install._resolve_version("^0.x", self.VERSIONS)
-        assert ver == "0.14.8", ver
-
-    def test_equality(self):
-        ver = dukpy_install._resolve_version("0.2.4", self.VERSIONS)
-        assert ver == "0.2.4", ver
-
-    def test_last(self):
-        ver = dukpy_install._resolve_version("", self.VERSIONS)
-        assert ver == "15.0.1", ver

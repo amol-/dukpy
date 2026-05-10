@@ -14,14 +14,35 @@ class TestJSInterpreter(unittest.TestCase):
         ans = interpreter.evaljs("o.value += 1; o")
         assert ans == {"value": 6}
 
-    def test_call_python(self):
-        def _say_hello(num, who):
-            return "Hello " + " ".join([who] * num)
-
+    def test_evaljs_reports_dukpy_global_publication_failure(self):
         interpreter = dukpy.JSInterpreter()
-        interpreter.export_function("say_hello", _say_hello)
-        res = interpreter.evaljs("call_python('say_hello', 3, 'world')")
-        assert res == "Hello world world world", res
+        assert interpreter.evaljs("Object.freeze(globalThis); 1") == 1
+
+        with self.assertRaises(JSRuntimeError) as err:
+            interpreter.evaljs("42", value=2)
+
+        assert "TypeError: 'dukpy' is read-only" in str(err.exception)
+
+    def test_evaljs_reports_call_python_global_publication_failure(self):
+        interpreter = dukpy.JSInterpreter()
+        assert (
+            interpreter.evaljs(
+                """
+                Object.defineProperty(globalThis, 'call_python', {
+                    value: call_python,
+                    writable: false,
+                    configurable: false
+                });
+                1;
+                """
+            )
+            == 1
+        )
+
+        with self.assertRaises(JSRuntimeError) as err:
+            interpreter.evaljs("42")
+
+        assert "TypeError: 'call_python' is read-only" in str(err.exception)
 
     def test_call_python_preserves_argument_order_and_json_types(self):
         seen = []
@@ -108,6 +129,12 @@ class TestJSInterpreter(unittest.TestCase):
             "name": "工具.☃",
         }
 
+    def test_call_python_maps_python_none_return_to_javascript_undefined(self):
+        interpreter = dukpy.JSInterpreter()
+        interpreter.export_function("noop", lambda: None)
+
+        assert interpreter.evaljs("typeof call_python('noop')") == "undefined"
+
     def test_call_python_arguments_follow_json_stringify_limits(self):
         seen = []
 
@@ -132,6 +159,30 @@ class TestJSInterpreter(unittest.TestCase):
         assert seen == [
             ([None, None, None, None, None], {"keep": 1, "nan": None, "inf": None})
         ]
+
+    def test_call_python_reports_argument_array_setup_failure_before_callback(self):
+        seen = []
+
+        def capture(*args):
+            seen.append(args)
+            return "unreached"
+
+        interpreter = dukpy.JSInterpreter()
+        interpreter.export_function("capture", capture)
+
+        with self.assertRaises(JSRuntimeError) as err:
+            interpreter.evaljs(
+                """
+                Object.defineProperty(Array.prototype, '0', {
+                    value: 'blocked',
+                    writable: false,
+                    configurable: true
+                });
+                call_python('capture', 'arg');
+                """
+            )
+        assert "TypeError: '0' is read-only" in str(err.exception)
+        assert seen == []
 
     def test_call_python_rejects_arguments_json_stringify_cannot_emit(self):
         seen = []
@@ -195,6 +246,33 @@ class TestJSInterpreter(unittest.TestCase):
                 "Error while calling Python Function (fail): ValueError('boom 雪')"
             ),
         }
+
+    def test_call_python_rejects_non_bytes_callback_json_data(self):
+        class BadCallbackInterpreter(dukpy.JSInterpreter):
+            def _call_python(self, func, json_args):
+                return {"not": "bytes"}
+
+        interpreter = BadCallbackInterpreter()
+        interpreter.export_function("bad", lambda: None)
+
+        assert interpreter.evaljs(
+            """
+            var caught = null;
+            try {
+                call_python('bad');
+            } catch (e) {
+                caught = {name: e.name, message: e.message};
+            }
+            ({caught: caught, stillUsable: 21 * 2});
+            """
+        ) == {
+            "caught": {
+                "name": "InternalError",
+                "message": "Python Function bad returned non-bytes JSON data",
+            },
+            "stillUsable": 42,
+        }
+        assert interpreter.evaljs("var value = 5; value + 1") == 6
 
     def test_module_loader(self):
         interpreter = dukpy.JSInterpreter()

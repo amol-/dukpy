@@ -71,15 +71,15 @@ PyObject *make_capsule_for_context(DukPyContext *ctx) {
  * catchable JavaScript InternalError, and QuickJS JSON parse/stringify failures
  * stay as the current JavaScript exception. */
 JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    JSValue args_array;
-    JSValue json_args;
-    JSValue parsed;
+    JSValue args_array = JS_UNDEFINED;
+    JSValue json_args = JS_UNDEFINED;
+    JSValue result = JS_EXCEPTION;
     PyObject *interpreter = (PyObject *)JS_GetContextOpaque(ctx);
-    PyObject *pyctx;
-    PyObject *ret;
+    PyObject *pyctx = NULL;
+    PyObject *ret = NULL;
     DukPyContext *dukpy_ctx;
-    const char *args;
-    const char *pyfuncname;
+    const char *args = NULL;
+    const char *pyfuncname = NULL;
 
     if (!interpreter) {
         return JS_ThrowReferenceError(ctx, "Missing dukpy interpreter");
@@ -102,32 +102,38 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
 
     pyfuncname = JS_ToCString(ctx, argv[0]);
     if (!pyfuncname) {
-        return JS_EXCEPTION;
+        goto cleanup;
     }
 
     args_array = JS_NewArray(ctx);
+    if (JS_IsException(args_array)) {
+        args_array = JS_UNDEFINED;
+        goto cleanup;
+    }
     for (int i = 1; i < argc; i++) {
-        JS_SetPropertyUint32(ctx, args_array, (uint32_t)(i - 1), JS_DupValue(ctx, argv[i]));
+        if (JS_SetPropertyUint32(ctx, args_array, (uint32_t)(i - 1),
+                                 JS_DupValue(ctx, argv[i])) < 0) {
+            goto cleanup;
+        }
     }
 
     json_args = JS_JSONStringify(ctx, args_array, JS_UNDEFINED, JS_UNDEFINED);
     JS_FreeValue(ctx, args_array);
+    args_array = JS_UNDEFINED;
     if (JS_IsException(json_args)) {
-        JS_FreeCString(ctx, pyfuncname);
-        return JS_EXCEPTION;
+        goto cleanup;
     }
 
     args = JS_ToCString(ctx, json_args);
     JS_FreeValue(ctx, json_args);
+    json_args = JS_UNDEFINED;
     if (!args) {
-        JS_FreeCString(ctx, pyfuncname);
-        return JS_EXCEPTION;
+        goto cleanup;
     }
 
     if (dukpy_should_interrupt()) {
-        JS_FreeCString(ctx, args);
-        JS_FreeCString(ctx, pyfuncname);
-        return JS_ThrowInternalError(ctx, "interrupted");
+        result = JS_ThrowInternalError(ctx, "interrupted");
+        goto cleanup;
     }
 
     ret = PyObject_CallMethod(interpreter, "_check_exported_function_exists", "y", pyfuncname);
@@ -137,31 +143,25 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
-        JSValue exception = JS_ThrowInternalError(ctx, "Failed to resolve Python function %s",
-                                                  pyfuncname);
-        JS_FreeCString(ctx, args);
-        JS_FreeCString(ctx, pyfuncname);
-        return exception;
+        result = JS_ThrowInternalError(ctx, "Failed to resolve Python function %s",
+                                       pyfuncname);
+        goto cleanup;
     }
     if (ret == Py_False) {
-        JSValue exception = JS_ThrowReferenceError(ctx, "No Python Function named %s",
-                                                  pyfuncname);
-        Py_DECREF(ret);
-        JS_FreeCString(ctx, args);
-        JS_FreeCString(ctx, pyfuncname);
-        return exception;
+        result = JS_ThrowReferenceError(ctx, "No Python Function named %s", pyfuncname);
+        goto cleanup;
     }
-    Py_DECREF(ret);
+    Py_CLEAR(ret);
 
     /* _call_python decodes JSON args, runs the exported callable, and JSON-encodes
      * its return; any Python failure here becomes a catchable JavaScript error. */
     ret = PyObject_CallMethod(interpreter, "_call_python", "yy", pyfuncname, args);
     JS_FreeCString(ctx, args);
+    args = NULL;
 
     if (ret != NULL && dukpy_should_interrupt()) {
-        Py_DECREF(ret);
-        JS_FreeCString(ctx, pyfuncname);
-        return JS_ThrowInternalError(ctx, "interrupted");
+        result = JS_ThrowInternalError(ctx, "interrupted");
+        goto cleanup;
     }
 
     if (ret == NULL) {
@@ -191,35 +191,55 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
             }
         }
 
-        JSValue exception = JS_ThrowInternalError(ctx,
-                                                  "Error while calling Python Function (%s): %s",
-                                                  pyfuncname, strerror);
+        result = JS_ThrowInternalError(ctx,
+                                       "Error while calling Python Function (%s): %s",
+                                       pyfuncname, strerror);
         Py_XDECREF(error_repr);
         Py_XDECREF(ptype);
         Py_XDECREF(ptraceback);
         Py_XDECREF(pvalue);
         Py_XDECREF(error);
         PyErr_Clear();
-        JS_FreeCString(ctx, pyfuncname);
-        return exception;
+        goto cleanup;
     }
 
     if (ret == Py_None) {
-        Py_DECREF(ret);
-        JS_FreeCString(ctx, pyfuncname);
-        return JS_UNDEFINED;
+        result = JS_UNDEFINED;
+        goto cleanup;
     }
 
     /* Re-enter QuickJS through JSON so callback returns obey the same value
      * limits as arguments and evaljs results. */
-    parsed = JS_ParseJSON(ctx, PyBytes_AsString(ret), PyBytes_GET_SIZE(ret), "<python>");
-    Py_DECREF(ret);
-    JS_FreeCString(ctx, pyfuncname);
-    if (JS_IsException(parsed)) {
-        return JS_EXCEPTION;
+    if (!PyBytes_Check(ret)) {
+        result = JS_ThrowInternalError(ctx,
+                                       "Python Function %s returned non-bytes JSON data",
+                                       pyfuncname);
+        goto cleanup;
     }
 
-    return parsed;
+    char *json;
+    Py_ssize_t json_size;
+    if (PyBytes_AsStringAndSize(ret, &json, &json_size) < 0) {
+        result = JS_ThrowInternalError(ctx,
+                                       "Python Function %s returned invalid JSON bytes",
+                                       pyfuncname);
+        PyErr_Clear();
+        goto cleanup;
+    }
+
+    result = JS_ParseJSON(ctx, json, (size_t)json_size, "<python>");
+
+cleanup:
+    Py_XDECREF(ret);
+    if (args) {
+        JS_FreeCString(ctx, args);
+    }
+    if (pyfuncname) {
+        JS_FreeCString(ctx, pyfuncname);
+    }
+    JS_FreeValue(ctx, json_args);
+    JS_FreeValue(ctx, args_array);
+    return result;
 }
 
 
@@ -272,6 +292,8 @@ int dukpy_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
                                  const char *module_name, int is_main) {
     JSModuleDef *module;
     JSValue meta_obj;
+    JSValue url;
+    int ret;
 
     if (JS_VALUE_GET_TAG(func_val) != JS_TAG_MODULE) {
         return -1;
@@ -283,10 +305,28 @@ int dukpy_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
         return -1;
     }
 
-    JS_DefinePropertyValueStr(ctx, meta_obj, "url", JS_NewString(ctx, module_name),
-                              JS_PROP_C_W_E);
-    JS_DefinePropertyValueStr(ctx, meta_obj, "main", JS_NewBool(ctx, is_main),
-                              JS_PROP_C_W_E);
+    url = JS_NewString(ctx, module_name);
+    if (JS_IsException(url)) {
+        JS_FreeValue(ctx, meta_obj);
+        return -1;
+    }
+    ret = JS_DefinePropertyValueStr(ctx, meta_obj, "url", url, JS_PROP_C_W_E);
+    if (ret <= 0) {
+        JS_FreeValue(ctx, meta_obj);
+        if (ret == 0) {
+            JS_ThrowTypeError(ctx, "cannot define import.meta.url");
+        }
+        return -1;
+    }
+    ret = JS_DefinePropertyValueStr(ctx, meta_obj, "main", JS_NewBool(ctx, is_main),
+                                    JS_PROP_C_W_E);
+    if (ret <= 0) {
+        JS_FreeValue(ctx, meta_obj);
+        if (ret == 0) {
+            JS_ThrowTypeError(ctx, "cannot define import.meta.main");
+        }
+        return -1;
+    }
     JS_FreeValue(ctx, meta_obj);
     return 0;
 }
@@ -380,7 +420,16 @@ JSModuleDef *dukpy_module_loader(JSContext *ctx, const char *module_name, void *
         return NULL;
     }
 
-    loaded = PyObject_CallMethod(interpreter, "_load_module", "s", module_name);
+    {
+        PyObject *loader = PyObject_GetAttrString(interpreter, "loader");
+        if (!loader) {
+            PyErr_Clear();
+            JS_ThrowInternalError(ctx, "Failed to load module '%s'", module_name);
+            return NULL;
+        }
+        loaded = PyObject_CallMethod(loader, "load", "s", module_name);
+        Py_DECREF(loader);
+    }
     if (!loaded) {
         PyErr_Clear();
         JS_ThrowInternalError(ctx, "Failed to load module '%s'", module_name);
