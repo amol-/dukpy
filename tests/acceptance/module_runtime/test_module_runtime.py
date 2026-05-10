@@ -93,6 +93,76 @@ def test_top_level_await_dependency_program_runs_as_a_module():
     assert interpreter.evaljs("globalThis.moduleRuntimeTopLevelAwaitBlock") == 42
 
 
+def test_module_format_program_uses_extensions_and_package_type_metadata():
+    interpreter = dukpy.JSInterpreter()
+    interpreter.loader.register_path(str(ACCEPTANCE_DIR))
+
+    assert interpreter.evaljs_module(
+        _read_case("module_format/entry.js"),
+        module_name="module_format/entry.js",
+    ) == {}
+
+    assert interpreter.evaljs("globalThis.moduleRuntimeModuleFormats") == {
+        "explicitModuleValue": 10,
+        "explicitModuleUrl": "module_format/explicit.mjs",
+        "explicitCommonJs": {
+            "value": 20,
+            "moduleId": "module_format/explicit.cjs",
+            "requireId": "module_format/explicit.cjs",
+            "thisIsExports": True,
+        },
+        "packageModuleValue": 30,
+        "packageModuleUrl": "module_format/module_package/main.js",
+        "packageCommonJs": {
+            "value": 40,
+            "moduleId": "module_format/commonjs_package/main.js",
+            "requireId": "module_format/commonjs_package/main.js",
+            "thisIsExports": True,
+            "syntaxLookingText": (
+                "import value from './missing.js'; export default value; await value;"
+            ),
+        },
+        "packageModuleExplicitCommonJs": {
+            "value": 31,
+            "moduleId": "module_format/module_package/explicit.cjs",
+            "requireId": "module_format/module_package/explicit.cjs",
+        },
+        "packageCommonJsExplicitModule": 41,
+    }
+
+    require_interpreter = dukpy.JSInterpreter()
+    require_interpreter.loader.register_path(str(ACCEPTANCE_DIR))
+    assert require_interpreter.evaljs(
+        "({"
+        "explicit: require('module_format/explicit.cjs').value, "
+        "packageMain: require('module_format/commonjs_package').moduleId"
+        "})"
+    ) == {
+        "explicit": 20,
+        "packageMain": "module_format/commonjs_package/main.js",
+    }
+
+
+def test_module_format_extensionless_names_do_not_probe_mjs_or_cjs():
+    interpreter = dukpy.JSInterpreter()
+    interpreter.loader.register_path(str(ACCEPTANCE_DIR))
+
+    with pytest.raises(dukpy.JSRuntimeError) as import_exc:
+        interpreter.evaljs_module(
+            "import './module_format/extensionless_esm_only';",
+            module_name="module_format_extensionless_entry.mjs",
+        )
+    assert "cannot find module: module_format/extensionless_esm_only" in str(
+        import_exc.value
+    )
+
+    with pytest.raises(dukpy.JSRuntimeError) as require_exc:
+        interpreter.evaljs("require('module_format/extensionless_cjs_only')")
+    assert "cannot find module: module_format/extensionless_cjs_only" in str(
+        require_exc.value
+    )
+
+
 def test_commonjs_import_program_exposes_default_export_object():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
@@ -119,40 +189,16 @@ def test_commonjs_import_program_exposes_default_export_object():
     }
 
 
-# TODO(EVO-200): Split the dense CommonJS literal-boundary acceptance case.
-# This test currently combines unusual module ids, control/unicode separators,
-# large source text, syntax-looking strings/comments, ESM import, and global
-# require. Finish by keeping focused acceptance cases for the user-visible
-# boundaries: module ids are not rewritten, CommonJS source is not inspected by
-# DukPy, and import/require share the same escaping path.
-def test_commonjs_entrypoints_accept_unrewritten_module_ids_and_source_text():
+def test_commonjs_module_ids_are_not_rewritten():
     import_id = 'pkg/import-"quoted"\\control\x01line\u2028paragraph\u2029.js'
     require_id = 'pkg/require-"quoted"\\control\x01line\u2028paragraph\u2029.js'
-    large_text = "x" * 70000
-    weird_source = (
-        'var weird = "quote: \\" backslash: \\\\ control: \x02 line: \u2028 paragraph: \u2029";\n'
-        'var syntaxText = "import maybe from \'not-real\'; export default 1;";\n'
-        '/* syntax-looking import ignored from "comment"; export const ignored = 1; */\n'
-        f'var large = "{large_text}";\n'
-        "exports.summary = {\n"
-        "  moduleId: module.id,\n"
-        "  requireId: require.id,\n"
-        "  thisIsExports: this === exports,\n"
-        "  quotePresent: weird.indexOf('\"') !== -1,\n"
-        "  backslashPresent: weird.indexOf('backslash: \\\\') !== -1,\n"
-        "  controlCode: weird.charCodeAt(weird.indexOf('control: ') + 9),\n"
-        "  lineSeparatorPresent: weird.indexOf('\u2028') !== -1,\n"
-        "  paragraphSeparatorPresent: weird.indexOf('\u2029') !== -1,\n"
-        "  largeLength: large.length,\n"
-        "  syntaxText: syntaxText\n"
-        "};\n"
-    )
+    source = "exports.summary = { moduleId: module.id, requireId: require.id };"
     loader = MagicMock()
     loader.lookup.side_effect = lambda module_name: (
         (module_name, None) if module_name in {import_id, require_id} else (None, None)
     )
     loader.load.side_effect = lambda module_name: (
-        (module_name, weird_source, "commonjs")
+        (module_name, source, "commonjs")
         if module_name in {import_id, require_id}
         else (None, None, None)
     )
@@ -162,30 +208,91 @@ def test_commonjs_entrypoints_accept_unrewritten_module_ids_and_source_text():
     assert interpreter.evaljs_module(
         "import cjs from "
         + json.dumps(import_id)
-        + "; globalThis.moduleRuntimeCommonJsLiteralBoundary = cjs.summary;",
-        module_name="commonjs_literal_boundary_entry.mjs",
+        + "; globalThis.moduleRuntimeCommonJsModuleIdImport = cjs.summary;",
+        module_name="commonjs_module_id_entry.mjs",
     ) == {}
 
-    common_expected = {
-        "thisIsExports": True,
+    assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsModuleIdImport") == {
+        "moduleId": import_id,
+        "requireId": import_id,
+    }
+    assert interpreter.evaljs("require(" + json.dumps(require_id) + ").summary") == {
+        "moduleId": require_id,
+        "requireId": require_id,
+    }
+
+
+def test_commonjs_source_is_not_inspected_by_dukpy():
+    module_id = "pkg/syntax-looking-commonjs.js"
+    source = (
+        'var syntaxText = "import maybe from \'not-real\'; export default 1; await value;";\n'
+        '/* import ignored from "comment"; export const ignored = 1; */\n'
+        "// import ignoredLine from 'comment'; export default ignoredLine;\n"
+        "exports.summary = { syntaxText: syntaxText, reachedRuntime: true };\n"
+    )
+    loader = MagicMock()
+    loader.lookup.side_effect = lambda module_name: (
+        (module_name, None) if module_name == module_id else (None, None)
+    )
+    loader.load.side_effect = lambda module_name: (
+        (module_name, source, "commonjs")
+        if module_name == module_id
+        else (None, None, None)
+    )
+    interpreter = dukpy.JSInterpreter()
+    interpreter._loader = loader
+
+    assert interpreter.evaljs("require(" + json.dumps(module_id) + ").summary") == {
+        "syntaxText": "import maybe from 'not-real'; export default 1; await value;",
+        "reachedRuntime": True,
+    }
+
+
+def test_esm_import_and_global_require_escape_commonjs_source_the_same_way():
+    import_id = "pkg/import-escaped-source.js"
+    require_id = "pkg/require-escaped-source.js"
+    large_text = "x" * 70000
+    source = (
+        'var escaped = "quote: \\" backslash: \\\\ control: \x02 line: \u2028 paragraph: \u2029";\n'
+        f'var large = "{large_text}";\n'
+        "exports.summary = {\n"
+        "  quotePresent: escaped.indexOf('\"') !== -1,\n"
+        "  backslashPresent: escaped.indexOf('backslash: \\\\') !== -1,\n"
+        "  controlCode: escaped.charCodeAt(escaped.indexOf('control: ') + 9),\n"
+        "  lineSeparatorPresent: escaped.indexOf('\u2028') !== -1,\n"
+        "  paragraphSeparatorPresent: escaped.indexOf('\u2029') !== -1,\n"
+        "  largeLength: large.length\n"
+        "};\n"
+    )
+    loader = MagicMock()
+    loader.lookup.side_effect = lambda module_name: (
+        (module_name, None) if module_name in {import_id, require_id} else (None, None)
+    )
+    loader.load.side_effect = lambda module_name: (
+        (module_name, source, "commonjs")
+        if module_name in {import_id, require_id}
+        else (None, None, None)
+    )
+    interpreter = dukpy.JSInterpreter()
+    interpreter._loader = loader
+
+    assert interpreter.evaljs_module(
+        "import cjs from "
+        + json.dumps(import_id)
+        + "; globalThis.moduleRuntimeCommonJsEscapedImport = cjs.summary;",
+        module_name="commonjs_escaped_import_entry.mjs",
+    ) == {}
+
+    expected = {
         "quotePresent": True,
         "backslashPresent": True,
         "controlCode": 2,
         "lineSeparatorPresent": True,
         "paragraphSeparatorPresent": True,
         "largeLength": len(large_text),
-        "syntaxText": "import maybe from 'not-real'; export default 1;",
     }
-    assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsLiteralBoundary") == {
-        **common_expected,
-        "moduleId": import_id,
-        "requireId": import_id,
-    }
-    assert interpreter.evaljs("require(" + json.dumps(require_id) + ").summary") == {
-        **common_expected,
-        "moduleId": require_id,
-        "requireId": require_id,
-    }
+    assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsEscapedImport") == expected
+    assert interpreter.evaljs("require(" + json.dumps(require_id) + ").summary") == expected
 
 
 def test_commonjs_compile_time_syntax_errors_do_not_poison_retries():

@@ -21,7 +21,7 @@ typedef struct DukPyContext {
     unsigned long current_eval_id;          /* Eval whose async jobs are currently draining. */
     unsigned long next_eval_id;             /* Monotonic non-zero id source for eval calls. */
     unsigned long next_commonjs_wrapper_id; /* Disposable module names for CommonJS retries. */
-    int drain_depth;              /* Prevents nested job drains from re-entering QuickJS. */
+    int drain_depth;              /* Marks job draining so reentrant evaljs fails cleanly. */
     int unusable;                 /* Set after pending jobs abort in an uncertain runtime state. */
 } DukPyContext;
 

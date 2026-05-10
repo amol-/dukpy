@@ -588,11 +588,78 @@ def test_evaljs_does_not_leak_to_json_jobs_when_serialization_throws():
     assert interpreter.evaljs("40 + 2") == 42
 
 
-def test_evaljs_reentrant_eval_does_not_consume_outer_pending_rejection():
+def test_evaljs_rejects_reentrant_eval_while_promise_jobs_are_draining():
+    interpreter = dukpy.JSInterpreter()
+    nested_error = None
+
+    def nested_eval():
+        nonlocal nested_error
+        try:
+            interpreter.evaljs(
+                """
+                globalThis.nestedJobLeaked = false;
+                Promise.resolve().then(function() {
+                    globalThis.nestedJobLeaked = true;
+                });
+                ({value: globalThis.nestedJobLeaked});
+                """
+            )
+        except dukpy.JSRuntimeError as exc:
+            nested_error = str(exc)
+            return nested_error
+        raise AssertionError("reentrant evaljs from a Promise job should fail")
+
+    interpreter.export_function("nested_eval", nested_eval)
+
+    assert interpreter.evaljs(
+        """
+        globalThis.outerMicrotaskRan = false;
+        Promise.resolve().then(function() {
+            globalThis.nestedEvalError = call_python('nested_eval');
+            globalThis.outerMicrotaskRan = true;
+        });
+        ({ok: true});
+        """
+    ) == {"ok": True}
+    assert nested_error == "Cannot call evaljs while QuickJS Promise jobs are draining"
+    assert interpreter.evaljs("globalThis.outerMicrotaskRan") is True
+    assert interpreter.evaljs("typeof globalThis.nestedJobLeaked") == "undefined"
+    assert interpreter.evaljs("40 + 2") == 42
+
+
+def test_evaljs_reentrant_eval_outside_promise_job_draining_still_works():
     interpreter = dukpy.JSInterpreter()
 
     def nested_eval():
-        return interpreter.evaljs("1 + 1")
+        return interpreter.evaljs(
+            """
+            var result = {value: 1};
+            Promise.resolve().then(function() {
+                result.value = 42;
+                globalThis.normalNestedJobDrained = true;
+            });
+            result;
+            """
+        )
+
+    interpreter.export_function("nested_eval", nested_eval)
+
+    assert interpreter.evaljs("call_python('nested_eval')") == {"value": 42}
+    assert interpreter.evaljs("globalThis.normalNestedJobDrained") is True
+
+
+def test_evaljs_reentrant_eval_rejection_does_not_consume_outer_pending_rejection():
+    interpreter = dukpy.JSInterpreter()
+    nested_error = None
+
+    def nested_eval():
+        nonlocal nested_error
+        try:
+            interpreter.evaljs("1 + 1")
+        except dukpy.JSRuntimeError as exc:
+            nested_error = str(exc)
+            return None
+        raise AssertionError("reentrant evaljs from a Promise job should fail")
 
     interpreter.export_function("nested_eval", nested_eval)
     with pytest.raises(dukpy.JSRuntimeError) as exc:
@@ -605,6 +672,7 @@ def test_evaljs_reentrant_eval_does_not_consume_outer_pending_rejection():
             ({ok: true});
             """
         )
+    assert nested_error == "Cannot call evaljs while QuickJS Promise jobs are draining"
     assert "Error: outer rejection" in str(exc.value)
     assert "Error while calling Python Function" not in str(exc.value)
 

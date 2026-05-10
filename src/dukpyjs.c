@@ -123,15 +123,6 @@ static void dukpy_promise_rejection_tracker(JSContext *ctx, JSValueConst promise
 }
 
 /* Microtask boundary: run QuickJS jobs for the current eval and surface failures. */
-/* TODO(EVO-210): Fix reentrant evaljs promise draining.
- * A Python callback invoked from a Promise job can call evaljs again. Today the
- * nested eval returns without draining its own queued Promise jobs because
- * drain_depth suppresses nested drains, so those jobs settle later under the
- * outer eval. Finish by either rejecting reentrant evals that enqueue jobs or by
- * making job ownership/draining explicit so nested eval results and rejections
- * belong to the nested call. Acceptance signal: nested evaljs from a microtask
- * observes its own Promise-settled result and does not leak jobs to the outer
- * eval. */
 static int dukpy_drain_pending_jobs(DukPyContext *context, JSContext *ctx,
                                     JSContext **exception_ctx,
                                     unsigned long eval_id) {
@@ -374,6 +365,12 @@ static PyObject *DukPy_eval_string(PyObject *self, PyObject *args) {
     if (context->unusable) {
         PyErr_SetString(DukPyError,
                         "DukPy interpreter context is unusable after aborted pending jobs");
+        goto finalize;
+    }
+
+    if (context->drain_depth > 0) {
+        PyErr_SetString(DukPyError,
+                        "Cannot call evaljs while QuickJS Promise jobs are draining");
         goto finalize;
     }
 
