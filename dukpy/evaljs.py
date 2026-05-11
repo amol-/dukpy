@@ -8,7 +8,7 @@ from dukpy.module_loader import JSModuleLoader
 from . import _dukpy
 
 string_types = (bytes, str)
-_RUNTIME_DIR = os.path.dirname(__file__)
+_RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "jsruntime")
 _PROCESS_RUNTIME = os.path.join(_RUNTIME_DIR, "process_runtime.js")
 _CONSOLE_RUNTIME = os.path.join(_RUNTIME_DIR, "console_runtime.js")
 _COMMONJS_RUNTIME = os.path.join(_RUNTIME_DIR, "commonjs_runtime.js")

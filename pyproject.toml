@@ -25,19 +25,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# TODO(EVO-003): Make the public testing extra collect the full test suite.
-# Scope: packaging/test-dependency metadata and, only if necessary, collection
-# behavior in tests/test_webassets_filter.py.
-# Expected fix: include webassets in the `testing` extra so contributors running
-# `pip install -e .[testing]` can collect and run the full non-vendored suite;
-# keep the separate `webassets` extra for users who install only that integration.
-# Non-goals: do not skip webassets tests when the dependency is available and do
-# not change the webassets runtime filters.
-# Done: a fresh test environment installed with .[testing] can collect
-# tests/test_webassets_filter.py without ModuleNotFoundError.
-# Validate: build metadata still parses, then run the webassets filter tests in
-# an environment with the testing extra installed.
-testing = ["pytest", "pytest-cov", "mock", "build"]
+testing = ["pytest", "pytest-cov", "mock", "build", "webassets"]
 webassets = ["webassets"]
 
 [project.scripts]
@@ -53,9 +41,7 @@ include-package-data = false
 
 [tool.setuptools.package-data]
 dukpy = [
-  "commonjs_runtime.js",
-  "console_runtime.js",
-  "process_runtime.js",
+  "jsruntime/*.js",
   "jscore/*.js",
   "jsmodules/*.js",
   "jsmodules/*/*.js",
