@@ -118,9 +118,7 @@ def _download_tarball(download_url):
                 chunk = data.read(1024)
     except Exception as e:
         raise JSPackageInstallError(
-            "Unable to download package tarball from {0}: {1}".format(
-                download_url, e
-            ),
+            "Unable to download package tarball from {0}: {1}".format(download_url, e),
             error_code=3,
         )
     print("")
@@ -216,9 +214,7 @@ def _prepare_package_destination(modulesdir, dest, package_name):
 def _validate_package_destination(modulesdir, dest, package_name):
     if os.path.commonpath((modulesdir, dest)) != modulesdir:
         raise JSPackageInstallError(
-            "Refusing to install package outside destination: {0}".format(
-                package_name
-            ),
+            "Refusing to install package outside destination: {0}".format(package_name),
             error_code=3,
         )
     if os.path.islink(dest):
@@ -247,9 +243,7 @@ def _validate_package_destination(modulesdir, dest, package_name):
     real_dest_parent = os.path.realpath(dest_parent)
     if os.path.commonpath((real_modulesdir, real_dest_parent)) != real_modulesdir:
         raise JSPackageInstallError(
-            "Refusing to install package outside destination: {0}".format(
-                package_name
-            ),
+            "Refusing to install package outside destination: {0}".format(package_name),
             error_code=3,
         )
 

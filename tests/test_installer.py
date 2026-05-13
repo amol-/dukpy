@@ -113,9 +113,7 @@ class TestPackageInstaller(unittest.TestCase):
             with self.subTest(registry=registry):
                 with self._patch_npm({"offline-package": registry}, {}):
                     with self.assertRaises(dukpy_install.JSPackageInstallError) as err:
-                        dukpy.install_jspackage(
-                            "offline-package", "1.0.0", self.tmpdir
-                        )
+                        dukpy.install_jspackage("offline-package", "1.0.0", self.tmpdir)
                 assert err.exception.error_code == 2
                 assert "does not provide version metadata" in str(err.exception)
 
@@ -241,8 +239,7 @@ class TestPackageInstaller(unittest.TestCase):
     def _offline_tarballs(self):
         return {
             (
-                "https://registry.npmjs.org/offline-package/-/"
-                "offline-package-1.0.0.tgz"
+                "https://registry.npmjs.org/offline-package/-/offline-package-1.0.0.tgz"
             ): self._tarball(
                 {
                     "package.json": json.dumps({"main": "index.js"}),
@@ -358,4 +355,3 @@ class TestPackageInstaller(unittest.TestCase):
                 info.size = len(data)
                 tb.addfile(info, BytesIO(data))
         return tarball.getvalue()
-

@@ -138,6 +138,7 @@ class JSInterpreter(object):
         inserted semicolon is part of the public legacy contract rather than a
         JavaScript syntax decision made by Python.
         """
+
         def _read_files(f):
             if hasattr(f, "read"):
                 return f.read()

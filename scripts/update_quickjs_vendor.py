@@ -22,9 +22,7 @@ ARCHIVE_SHA256_BY_VERSION = {
     "v0.11.0": "c06c2122eed258444ad3d94470c6d645653b308e10002d3e43a774ba4d24953d",
 }
 VENDORING_METADATA = "VENDORING.json"
-MANIFEST_QUICKJS_RULE = (
-    "recursive-include src/quickjs *.c *.h VERSION VENDORING.json"
-)
+MANIFEST_QUICKJS_RULE = "recursive-include src/quickjs *.c *.h VERSION VENDORING.json"
 MANIFEST_SCRIPT_RULE = "include scripts/update_quickjs_vendor.py"
 MANIFEST_PATCH_RULE = "recursive-include scripts/quickjs_patches *.patch"
 
@@ -57,9 +55,7 @@ def main(argv: list[str] | None = None) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     names, archive_sha256 = update_vendor(repo_root, version, url, expected_sha256)
     print(
-        "Updated {0} with: {1}".format(
-            repo_root / "src" / "quickjs", ", ".join(names)
-        )
+        "Updated {0} with: {1}".format(repo_root / "src" / "quickjs", ", ".join(names))
     )
     print(f"Recorded version: {version}")
     print(f"Verified archive sha256: {archive_sha256}")
@@ -88,9 +84,7 @@ def update_vendor(
             names = _extract_amalgam(archive, staging_quickjs_dir)
 
         patches = _apply_local_patches(repo_root, staging_quickjs_dir)
-        (staging_quickjs_dir / "VERSION").write_text(
-            f"{version}\n", encoding="utf-8"
-        )
+        (staging_quickjs_dir / "VERSION").write_text(f"{version}\n", encoding="utf-8")
         (staging_quickjs_dir / VENDORING_METADATA).write_text(
             json.dumps(
                 {

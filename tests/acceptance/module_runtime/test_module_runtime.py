@@ -14,21 +14,27 @@ ACCEPTANCE_DIR = Path(__file__).parent
 
 
 def test_native_esm_syntax_program_runs_and_updates_interpreter_state():
-    assert dukpy.evaljs_module(
-        _read_case("esm_syntax.js"),
-        module_name="esm_syntax.js",
-        eval_as_module=40,
-        module=2,
-    ) == {}
+    assert (
+        dukpy.evaljs_module(
+            _read_case("esm_syntax.js"),
+            module_name="esm_syntax.js",
+            eval_as_module=40,
+            module=2,
+        )
+        == {}
+    )
 
     interpreter = dukpy.JSInterpreter()
 
-    assert interpreter.evaljs_module(
-        _read_case("esm_syntax.js"),
-        module_name="esm_syntax.js",
-        eval_as_module=40,
-        module=2,
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("esm_syntax.js"),
+            module_name="esm_syntax.js",
+            eval_as_module=40,
+            module=2,
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeEsmSyntax") == {
         "answer": 42,
@@ -40,10 +46,13 @@ def test_import_meta_and_relative_import_program_reports_module_urls():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert interpreter.evaljs_module(
-        _read_case("relative_pkg/main.js"),
-        module_name="relative_pkg/main.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("relative_pkg/main.js"),
+            module_name="relative_pkg/main.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeImportMetaAndRelative") == {
         "answer": 42,
@@ -58,10 +67,13 @@ def test_slashless_module_name_program_resolves_relative_imports_from_root():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert interpreter.evaljs_module(
-        _read_case("slashless_relative_import.js"),
-        module_name="slashless_relative_import.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("slashless_relative_import.js"),
+            module_name="slashless_relative_import.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeSlashlessRelativeImport") == {
         "value": 42,
@@ -74,10 +86,13 @@ def test_import_meta_only_dependency_program_runs_as_a_module():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert interpreter.evaljs_module(
-        _read_case("import_meta_only_entry.js"),
-        module_name="import_meta_only_entry.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("import_meta_only_entry.js"),
+            module_name="import_meta_only_entry.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeImportMetaOnly") == (
         "import_meta_only_dep.js"
@@ -88,10 +103,13 @@ def test_top_level_await_dependency_program_runs_as_a_module():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert interpreter.evaljs_module(
-        _read_case("top_level_await_entry.js"),
-        module_name="top_level_await_entry.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("top_level_await_entry.js"),
+            module_name="top_level_await_entry.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeTopLevelAwaitBlock") == 42
 
@@ -103,10 +121,13 @@ def test_module_format_program_uses_extensions_and_package_type_metadata():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert interpreter.evaljs_module(
-        _read_case("module_format/entry.js"),
-        module_name="module_format/entry.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("module_format/entry.js"),
+            module_name="module_format/entry.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeModuleFormats") == {
         "explicitModuleValue": 10,
@@ -176,10 +197,13 @@ def test_commonjs_import_program_exposes_default_export_object():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert interpreter.evaljs_module(
-        _read_case("commonjs_pkg/entry.js"),
-        module_name="commonjs_pkg/entry.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("commonjs_pkg/entry.js"),
+            module_name="commonjs_pkg/entry.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsImport") == {
         "answer": 42,
@@ -214,12 +238,15 @@ def test_commonjs_module_ids_are_not_rewritten():
     interpreter = dukpy.JSInterpreter()
     _use_loader(interpreter, loader)
 
-    assert interpreter.evaljs_module(
-        "import cjs from "
-        + json.dumps(import_id)
-        + "; globalThis.moduleRuntimeCommonJsModuleIdImport = cjs.summary;",
-        module_name="commonjs_module_id_entry.mjs",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            "import cjs from "
+            + json.dumps(import_id)
+            + "; globalThis.moduleRuntimeCommonJsModuleIdImport = cjs.summary;",
+            module_name="commonjs_module_id_entry.mjs",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsModuleIdImport") == {
         "moduleId": import_id,
@@ -234,7 +261,7 @@ def test_commonjs_module_ids_are_not_rewritten():
 def test_commonjs_source_is_not_inspected_by_dukpy():
     module_id = "pkg/syntax-looking-commonjs.js"
     source = (
-        'var syntaxText = "import maybe from \'not-real\'; export default 1; await value;";\n'
+        "var syntaxText = \"import maybe from 'not-real'; export default 1; await value;\";\n"
         '/* import ignored from "comment"; export const ignored = 1; */\n'
         "// import ignoredLine from 'comment'; export default ignoredLine;\n"
         "exports.summary = { syntaxText: syntaxText, reachedRuntime: true };\n"
@@ -285,12 +312,15 @@ def test_esm_import_and_global_require_escape_commonjs_source_the_same_way():
     interpreter = dukpy.JSInterpreter()
     _use_loader(interpreter, loader)
 
-    assert interpreter.evaljs_module(
-        "import cjs from "
-        + json.dumps(import_id)
-        + "; globalThis.moduleRuntimeCommonJsEscapedImport = cjs.summary;",
-        module_name="commonjs_escaped_import_entry.mjs",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            "import cjs from "
+            + json.dumps(import_id)
+            + "; globalThis.moduleRuntimeCommonJsEscapedImport = cjs.summary;",
+            module_name="commonjs_escaped_import_entry.mjs",
+        )
+        == {}
+    )
 
     expected = {
         "quotePresent": True,
@@ -300,8 +330,13 @@ def test_esm_import_and_global_require_escape_commonjs_source_the_same_way():
         "paragraphSeparatorPresent": True,
         "largeLength": len(large_text),
     }
-    assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsEscapedImport") == expected
-    assert interpreter.evaljs("require(" + json.dumps(require_id) + ").summary") == expected
+    assert (
+        interpreter.evaljs("globalThis.moduleRuntimeCommonJsEscapedImport") == expected
+    )
+    assert (
+        interpreter.evaljs("require(" + json.dumps(require_id) + ").summary")
+        == expected
+    )
 
 
 def test_commonjs_import_program_does_not_infer_named_exports_from_source():
@@ -357,12 +392,15 @@ def test_commonjs_compile_time_syntax_errors_do_not_poison_retries():
             module_name="commonjs_syntax_retry_entry.mjs",
         )
     assert "SyntaxError" in str(import_exc.value)
-    assert interpreter.evaljs_module(
-        "import cjs from "
-        + json.dumps(import_id)
-        + "; globalThis.moduleRuntimeCommonJsSyntaxRetry = cjs.value;",
-        module_name="commonjs_syntax_retry_entry.mjs",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            "import cjs from "
+            + json.dumps(import_id)
+            + "; globalThis.moduleRuntimeCommonJsSyntaxRetry = cjs.value;",
+            module_name="commonjs_syntax_retry_entry.mjs",
+        )
+        == {}
+    )
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsSyntaxRetry") == (
         import_id + ":" + import_id
     )
@@ -377,10 +415,13 @@ def test_global_require_and_esm_commonjs_interop_share_module_cache():
         "var shared = require('commonjs_pkg/shared_cache'); "
         "shared.loadCount = 42; shared;"
     ) == {"loadCount": 42}
-    assert interpreter.evaljs_module(
-        _read_case("commonjs_pkg/shared_cache_entry.js"),
-        module_name="commonjs_pkg/shared_cache_entry.js",
-    ) == {}
+    assert (
+        interpreter.evaljs_module(
+            _read_case("commonjs_pkg/shared_cache_entry.js"),
+            module_name="commonjs_pkg/shared_cache_entry.js",
+        )
+        == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsSharedCache") == {
         "importedLoadCount": 42,
@@ -411,17 +452,20 @@ def test_failed_esm_commonjs_import_can_be_retried_with_same_module_name():
         interpreter.evaljs_module(code, module_name="commonjs_pkg/flaky_entry.js")
 
     assert "Error: flaky cjs failed" in str(exc.value)
-    assert interpreter.evaljs(
-        "globalThis.moduleRuntimeCommonJsFlakyShouldPass = true; "
-        "globalThis.moduleRuntimeCommonJsFlakyAttempts || 0;"
-    ) == 1
-    assert interpreter.evaljs_module(
-        code, module_name="commonjs_pkg/flaky_entry.js"
-    ) == {}
+    assert (
+        interpreter.evaljs(
+            "globalThis.moduleRuntimeCommonJsFlakyShouldPass = true; "
+            "globalThis.moduleRuntimeCommonJsFlakyAttempts || 0;"
+        )
+        == 1
+    )
+    assert (
+        interpreter.evaljs_module(code, module_name="commonjs_pkg/flaky_entry.js") == {}
+    )
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsFlakyAttempts") == 2
-    assert interpreter.evaljs_module(
-        code, module_name="commonjs_pkg/flaky_entry.js"
-    ) == {}
+    assert (
+        interpreter.evaljs_module(code, module_name="commonjs_pkg/flaky_entry.js") == {}
+    )
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsFlakyAttempts") == 2
 
 

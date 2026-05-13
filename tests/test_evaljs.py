@@ -8,6 +8,7 @@ import os
 import signal
 
 import dukpy
+
 try:
     import mock
 except ImportError:
@@ -63,13 +64,16 @@ def test_evaljs_preserves_emoji_keyword_values():
 
 
 def test_evaljs_keeps_kwargs_as_user_data_when_module_api_exists():
-    assert dukpy.evaljs(
-        "dukpy.eval_as_module + dukpy.evaljs_module + dukpy.module + dukpy.module_name",
-        eval_as_module=20,
-        evaljs_module=20,
-        module=1,
-        module_name=1,
-    ) == 42
+    assert (
+        dukpy.evaljs(
+            "dukpy.eval_as_module + dukpy.evaljs_module + dukpy.module + dukpy.module_name",
+            eval_as_module=20,
+            evaljs_module=20,
+            module=1,
+            module_name=1,
+        )
+        == 42
+    )
 
 
 @pytest.mark.parametrize(
@@ -284,8 +288,9 @@ def test_evaljs_propagates_pending_promise_job_failures():
 def test_evaljs_drains_promise_microtasks_created_by_to_json():
     interpreter = dukpy.JSInterpreter()
 
-    assert interpreter.evaljs(
-        """
+    assert (
+        interpreter.evaljs(
+            """
         var state = {serialized: false};
         ({
             toJSON: function() {
@@ -294,7 +299,9 @@ def test_evaljs_drains_promise_microtasks_created_by_to_json():
             }
         });
         """
-    ) == "serialized"
+        )
+        == "serialized"
+    )
     assert interpreter.evaljs("state.serialized") is True
 
 
