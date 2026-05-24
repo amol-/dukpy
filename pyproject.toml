@@ -30,7 +30,7 @@ webassets = ["webassets"]
 
 [project.scripts]
 dukpy-install = "dukpy.install:main"
-dukpy = "dukpy.run:main"
+dukpy = "dukpy.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/amol-/dukpy"

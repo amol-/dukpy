@@ -395,6 +395,46 @@ static const char dukpy_commonjs_module_wrapper[] =
     "export default module.exports;\n"
     "export { module, exports, require };\n";
 
+static int dukpy_commonjs_source_compiles(JSContext *ctx, const char *source,
+                                          size_t source_len) {
+    JSValue global = JS_UNDEFINED;
+    JSValue probe = JS_UNDEFINED;
+    JSValue source_value = JS_UNDEFINED;
+    JSValue result = JS_UNDEFINED;
+    int compiles = -1;
+
+    global = JS_GetGlobalObject(ctx);
+    if (JS_IsException(global)) {
+        return -1;
+    }
+
+    probe = JS_GetPropertyStr(ctx, global, "_dukpy_cjs_source_compiles");
+    if (JS_IsException(probe)) {
+        goto cleanup;
+    }
+    if (!JS_IsFunction(ctx, probe)) {
+        JS_ThrowInternalError(ctx, "Missing CommonJS syntax probe");
+        goto cleanup;
+    }
+
+    source_value = JS_NewStringLen(ctx, source, source_len);
+    if (JS_IsException(source_value)) {
+        goto cleanup;
+    }
+
+    result = JS_Call(ctx, probe, JS_UNDEFINED, 1, &source_value);
+    if (!JS_IsException(result)) {
+        compiles = JS_ToBool(ctx, result);
+    }
+
+cleanup:
+    JS_FreeValue(ctx, result);
+    JS_FreeValue(ctx, source_value);
+    JS_FreeValue(ctx, probe);
+    JS_FreeValue(ctx, global);
+    return compiles;
+}
+
 /* QuickJS module loader boundary: Python returns (id, source, format), then C
  * compiles either native ESM or a narrow CommonJS wrapper without parsing JS. */
 JSModuleDef *dukpy_module_loader(JSContext *ctx, const char *module_name, void *opaque) {
@@ -414,6 +454,7 @@ JSModuleDef *dukpy_module_loader(JSContext *ctx, const char *module_name, void *
     JSValue commonjs_source = JS_UNDEFINED;
     JSValue func_val;
     JSModuleDef *module;
+    int use_commonjs = 0;
 
     if (!interpreter) {
         JS_ThrowReferenceError(ctx, "Missing dukpy interpreter");
@@ -488,6 +529,20 @@ JSModuleDef *dukpy_module_loader(JSContext *ctx, const char *module_name, void *
     eval_module_name_c = module_id_c;
     eval_source_len = (size_t)source_len;
     if (strcmp(module_format_c, "commonjs") == 0) {
+        use_commonjs = 1;
+    } else if (strcmp(module_format_c, "detect") == 0) {
+        use_commonjs = dukpy_commonjs_source_compiles(ctx, source_c, (size_t)source_len);
+        if (use_commonjs < 0) {
+            Py_DECREF(loaded);
+            return NULL;
+        }
+    } else if (strcmp(module_format_c, "module") != 0) {
+        JS_ThrowTypeError(ctx, "Invalid module format: %s", module_format_c);
+        Py_DECREF(loaded);
+        return NULL;
+    }
+
+    if (use_commonjs) {
         PyObject *pyctx = PyObject_GetAttrString(interpreter, "_ctx");
         DukPyContext *dukpy_ctx = pyctx ? get_context_from_capsule(pyctx) : NULL;
         unsigned long wrapper_id;
@@ -515,10 +570,6 @@ JSModuleDef *dukpy_module_loader(JSContext *ctx, const char *module_name, void *
         eval_source_c = dukpy_commonjs_module_wrapper;
         eval_module_name_c = commonjs_wrapper_name;
         eval_source_len = sizeof(dukpy_commonjs_module_wrapper) - 1;
-    } else if (strcmp(module_format_c, "module") != 0) {
-        JS_ThrowTypeError(ctx, "Invalid module format: %s", module_format_c);
-        Py_DECREF(loaded);
-        return NULL;
     }
 
     func_val = JS_Eval(ctx, eval_source_c, eval_source_len, eval_module_name_c,

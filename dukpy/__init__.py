@@ -1,4 +1,4 @@
-from .evaljs import evaljs, evaljs_module, JSInterpreter
+from .evaljs import evaljs, run, JSInterpreter
 from ._dukpy import JSRuntimeError
 from .install import install_jspackage
 
@@ -13,7 +13,7 @@ __all__ = [
     "babel_compile",
     "coffee_compile",
     "evaljs",
-    "evaljs_module",
+    "run",
     "install_jspackage",
     "jsx_compile",
     "less_compile",

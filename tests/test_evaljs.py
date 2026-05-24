@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import importlib
 import io
 import logging
 import multiprocessing
@@ -32,6 +33,14 @@ def test_evaljs_evaluates_modern_javascript_syntax_smoke():
 def test_evaljs_returns_object_from_multiple_source_fragments():
     ans = dukpy.evaljs(["var o = {'value': 5}", "o['value'] += 3", "o"])
     assert ans == {"value": 8}
+
+
+def test_public_javascript_api_is_evaljs_and_run_only():
+    evaljs_module = importlib.import_module("dukpy.evaljs")
+
+    assert not hasattr(dukpy, "evaljs_module")
+    assert not hasattr(dukpy.JSInterpreter(), "evaljs_module")
+    assert not hasattr(evaljs_module, "evaljs_module")
 
 
 # Host globals
@@ -74,6 +83,13 @@ def test_evaljs_keeps_kwargs_as_user_data_when_module_api_exists():
         )
         == 42
     )
+
+
+def test_evaljs_does_not_expose_static_import_module_support():
+    with pytest.raises(dukpy.JSRuntimeError) as exc:
+        dukpy.evaljs("import './dep.mjs';")
+
+    assert "SyntaxError:" in str(exc.value)
 
 
 @pytest.mark.parametrize(
@@ -645,9 +661,12 @@ def test_js_runtime_error_preserves_function_names_that_look_like_host_locations
     assert "eval:123" not in str(exc.value)
 
 
-def test_js_runtime_error_reports_module_import_failures_without_source_scanning():
+def test_internal_evaljs_module_reports_import_failures_without_source_scanning():
+    interpreter = dukpy.JSInterpreter()
+    # Private module evaluation is intentional: this pins the native loader
+    # boundary for a synthetic module id without involving filesystem metadata.
     with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs_module(
+        interpreter._evaljs_module(
             "import value from './missing-雪.js';",
             module_name="pkg/entry☃.mjs",
         )
@@ -726,6 +745,13 @@ def test_evaljs_accepts_file_like_source():
     with open(testfile) as f:
         s = dukpy.evaljs(f)
     assert s == 8, s
+
+
+def test_evaljs_file_like_source_remains_script_text():
+    with pytest.raises(dukpy.JSRuntimeError) as exc:
+        dukpy.evaljs(io.StringIO("export const value = 42;"))
+
+    assert "SyntaxError:" in str(exc.value)
 
 
 def test_evaljs_accepts_multiple_file_like_sources():

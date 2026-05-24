@@ -2,10 +2,11 @@
 """Metadata-only JavaScript module resolution.
 
 ``JSModuleLoader`` finds module source files and returns the format metadata
-that tells QuickJS whether DukPy intends native ES module or CommonJS handling.
-The loader owns only metadata-based classification: explicit ``.mjs`` and
-``.cjs`` extensions, nearest ``package.json`` ``type`` for ``.js`` files, and a
-CommonJS default. It never scans JavaScript source for syntax-looking text.
+that tells QuickJS whether DukPy intends native ES module, CommonJS handling, or
+QuickJS wrapper probing for ambiguous ``.js`` files. The loader owns only
+metadata-based classification: explicit ``.mjs`` and ``.cjs`` extensions,
+nearest ``package.json`` ``type`` for ``.js`` files, and a CommonJS default. It
+never scans JavaScript source for syntax-looking text.
 """
 
 import json
@@ -53,6 +54,28 @@ class JSModuleLoader(object):
                 return module_id, f.read().decode("utf-8"), module_format
         return None, None, None
 
+    def resolve_entry_path(self, path):
+        """Return absolute path, canonical module id, and format for an entrypoint."""
+        path = os.path.abspath(os.fspath(path))
+        return path, self._module_id_for_entry_path(path), self.format_for_path(path)
+
+    def format_for_path(self, path):
+        """Return explicit Node-like format metadata for a JavaScript path.
+
+        Ambiguous package-less ``.js`` files return ``"detect"`` so QuickJS can
+        probe the CommonJS wrapper before deciding between CommonJS and native
+        ES module compilation.
+        """
+        extension = os.path.splitext(path)[1]
+        if extension == ".mjs":
+            return "module"
+        if extension == ".cjs":
+            return "commonjs"
+        if extension == ".js":
+            package_type = self._package_type(path)
+            return package_type if package_type in ("commonjs", "module") else "detect"
+        return "commonjs"
+
     def _lookup(self, module_name):
         for search_path in self._paths:
             module_file, module_format = self._resolve(
@@ -71,7 +94,7 @@ class JSModuleLoader(object):
     def _resolve_file(self, module_path):
         for path in (module_path, os.path.extsep.join((module_path, "js"))):
             if os.path.isfile(path):
-                return path, self._format_for_path(path)
+                return path, self.format_for_path(path)
         return None, None
 
     def _resolve_directory(self, module_path, seen):
@@ -102,16 +125,6 @@ class JSModuleLoader(object):
 
         return self._resolve_file(os.path.join(module_path, "index"))
 
-    def _format_for_path(self, path):
-        extension = os.path.splitext(path)[1]
-        if extension == ".mjs":
-            return "module"
-        if extension == ".cjs":
-            return "commonjs"
-        if extension == ".js" and self._package_type(path) == "module":
-            return "module"
-        return "commonjs"
-
     def _package_type(self, path):
         current = os.path.abspath(os.path.dirname(path))
         while True:
@@ -133,6 +146,14 @@ class JSModuleLoader(object):
             if parent == current:
                 return None
             current = parent
+
+    def _module_id_for_entry_path(self, path):
+        if os.name != "nt" and "\\" in path and (
+            path.startswith("\\\\")
+            or (len(path) >= 3 and path[1] == ":" and path[2] == "\\")
+        ):
+            return self._path_id(path)
+        return self._module_id(path)
 
     def _module_id(self, module_file):
         module_file = os.path.realpath(module_file)
@@ -162,6 +183,15 @@ class JSModuleLoader(object):
                 module_id = relative_id
                 break
 
+        return self._path_id(module_id)
+
+    def _path_id(self, path):
         if os.path.altsep:
-            module_id = module_id.replace(os.path.altsep, "/")
-        return module_id.replace(os.path.sep, "/")
+            path = path.replace(os.path.altsep, "/")
+        path = path.replace(os.path.sep, "/")
+        if "\\" in path and (
+            path.startswith("\\\\")
+            or (len(path) >= 3 and path[1] == ":" and path[2] == "\\")
+        ):
+            path = path.replace("\\", "/")
+        return path

@@ -208,31 +208,28 @@ resulting value as far as it is possible to encode it in JSON.
 If execution fails a ``dukpy.JSRuntimeError`` exception is raised
 with the failure reason.
 
-Evaluating ES modules
-~~~~~~~~~~~~~~~~~~~~~
+Running JavaScript files
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Native ES module syntax can be evaluated with ``dukpy.evaljs_module`` or,
-when reusing an interpreter, ``JSInterpreter.evaljs_module``:
+Use ``dukpy.run`` or, when reusing an interpreter, ``JSInterpreter.run`` to run a
+JavaScript file entrypoint:
 
 .. code:: python
 
     >>> import dukpy
-    >>> jsi = dukpy.JSInterpreter()
-    >>> jsi.evaljs_module("export const answer = dukpy.value + 1; globalThis.answer = answer;", value=41)
+    >>> dukpy.run("./main.mjs")
     {}
-    >>> jsi.evaljs("answer")
-    42
 
-Pass ``module_name`` when a module needs a caller-visible ``import.meta.url``
-or a base path for top-level relative imports.
-The module-mode API is intentionally separate from ``evaljs`` so keyword
-arguments remain user data exposed on the JavaScript ``dukpy`` object.
-
-DukPy classifies module files only from metadata: ``.mjs`` files are native ES
-modules, ``.cjs`` files are CommonJS, and ``.js`` files follow the nearest
-``package.json`` ``type`` of ``module`` or ``commonjs`` before defaulting to
-CommonJS. The loader never scans source text for ``import``, ``export``,
-``await``, comments, strings, or identifiers when choosing a module format.
+``evaljs`` always evaluates source text as a script. ``run`` reads a file and
+uses Node-like entrypoint classification: ``.mjs`` files are native ES modules,
+``.cjs`` files are CommonJS, and ``.js`` files follow the nearest
+``package.json`` ``type`` of ``module`` or ``commonjs``. Ambiguous ``.js``
+entrypoints and dependencies are probed by QuickJS by compiling the CommonJS
+wrapper first and falling back to native ES module compilation when that fails;
+DukPy does not scan source text for ``import``, ``export``, ``await``, comments,
+strings, or identifiers. Entrypoints use the same canonical module id as the
+loader; for files under a registered loader path, ``import.meta.url`` and
+CommonJS ``module.id`` may be relative to that path.
 
 When ES modules import files classified as CommonJS, DukPy exposes a minimal
 synthetic namespace: ``default`` is ``module.exports``, and the only named

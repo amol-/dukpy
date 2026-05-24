@@ -52,16 +52,50 @@ class JSInterpreter(object):
         """
         return self._evaljs(code, False, "<dukpy>", kwargs)
 
-    def evaljs_module(self, code, module_name="<dukpy>", **kwargs):
-        """Run JavaScript code as a native ES module in this interpreter.
+    def run(self, path, **kwargs):
+        """Run a JavaScript file using Node-like entrypoint classification.
 
-        The module name is passed to QuickJS for ``import.meta.url`` and as the
-        base for resolving top-level relative imports. All user data keyword
-        arguments are converted to plain JavaScript values through the JSON
-        encoder and are available on the ``dukpy`` global object. This explicit
-        module API keeps ``evaljs`` keyword arguments reserved for user data and
-        avoids Python-side source scanning for module syntax.
+        ``evaljs`` remains source-text script evaluation. File entrypoints live
+        here: DukPy reads the file, adapts a leading shebang, classifies explicit
+        ``.mjs``/``.cjs`` extensions and nearest ``package.json`` ``type``
+        metadata, then asks QuickJS to probe ambiguous ``.js`` source by trying
+        the CommonJS wrapper first.
         """
+        path, module_name, module_format = self._loader.resolve_entry_path(path)
+        with open(path, encoding="utf-8") as f:
+            source = self._adapt_shebang(f.read())
+
+        if module_format == "detect":
+            if self.evaljs("_dukpy_cjs_source_compiles(" + json.dumps(source) + ");"):
+                module_format = "commonjs"
+            else:
+                module_format = "module"
+
+        if module_format == "module":
+            return self._evaljs_module(source, module_name=module_name, **kwargs)
+
+        return self.evaljs(
+            "_dukpy_eval_cjs_source("
+            + json.dumps(module_name)
+            + ", "
+            + json.dumps(module_name)
+            + ", "
+            + json.dumps(source)
+            + ").exports;",
+            **kwargs,
+        )
+
+    def export_function(self, name, func):
+        """Exports a python function to the javascript layer with the given name.
+
+        Note that it is possible to pass back and forth between JS and Python
+        only plain javascript objects and that the objects are passed by
+        copy so it is not possible to modify a python object from js.
+        """
+        self._funcs[name] = func
+
+    def _evaljs_module(self, code, module_name="<dukpy>", **kwargs):
+        """Run JavaScript code through the private native ES module path."""
         return self._evaljs(code, True, module_name, kwargs)
 
     def _evaljs(self, code, eval_as_module, module_name, kwargs):
@@ -80,15 +114,6 @@ class JSInterpreter(object):
             return None
 
         return json.loads(res.decode("utf-8"))
-
-    def export_function(self, name, func):
-        """Exports a python function to the javascript layer with the given name.
-
-        Note that it is possible to pass back and forth between JS and Python
-        only plain javascript objects and that the objects are passed by
-        copy so it is not possible to modify a python object from js.
-        """
-        self._funcs[name] = func
 
     def _check_exported_function_exists(self, func):
         func = func.decode("utf-8")
@@ -121,6 +146,13 @@ class JSInterpreter(object):
         """Evaluate a reviewed host-runtime JavaScript asset."""
         with open(path, encoding="utf-8") as runtime:
             self.evaljs(runtime, **kwargs)
+
+    def _adapt_shebang(self, source):
+        # POSIX shebangs are host launch metadata, not JavaScript syntax.
+        if source.startswith("#!"):
+            _, separator, source = source.partition("\n")
+            return "\n" + source if separator else "\n"
+        return source
 
     def _normalize_module(self, base_name, module_name):
         if module_name.startswith(".") and base_name:
@@ -160,10 +192,8 @@ def evaljs(code, **kwargs):
     return JSInterpreter().evaljs(code, **kwargs)
 
 
-def evaljs_module(code, module_name="<dukpy>", **kwargs):
-    """Evaluate ``code`` as a QuickJS native ES module in a fresh interpreter.
+def run(path, **kwargs):
+    """Run a JavaScript file with the product CLI compatibility shims."""
+    from .nodelike import NodeLikeInterpreter
 
-    ``module_name`` is explicit host intent for QuickJS; Python does not scan
-    source text to infer module syntax.
-    """
-    return JSInterpreter().evaljs_module(code, module_name=module_name, **kwargs)
+    return NodeLikeInterpreter().run(path, **kwargs)

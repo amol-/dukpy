@@ -7,34 +7,18 @@ import pytest
 import dukpy
 
 
-ACCEPTANCE_DIR = Path(__file__).parent
+ACCEPTANCE_DIR = Path(__file__).parent.resolve()
 
 
 # Native ESM, import.meta, and top-level await
 
 
 def test_native_esm_syntax_program_runs_and_updates_interpreter_state():
-    assert (
-        dukpy.evaljs_module(
-            _read_case("esm_syntax.js"),
-            module_name="esm_syntax.js",
-            eval_as_module=40,
-            module=2,
-        )
-        == {}
-    )
+    assert dukpy.run(_case_path("esm_syntax.js"), eval_as_module=40, module=2) == {}
 
     interpreter = dukpy.JSInterpreter()
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("esm_syntax.js"),
-            module_name="esm_syntax.js",
-            eval_as_module=40,
-            module=2,
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("esm_syntax.js"), eval_as_module=40, module=2) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeEsmSyntax") == {
         "answer": 42,
@@ -42,17 +26,11 @@ def test_native_esm_syntax_program_runs_and_updates_interpreter_state():
     }
 
 
-def test_import_meta_and_relative_import_program_reports_module_urls():
+def test_run_executes_js_entrypoint_under_module_package_metadata():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("relative_pkg/main.js"),
-            module_name="relative_pkg/main.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("relative_pkg/main.js")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeImportMetaAndRelative") == {
         "answer": 42,
@@ -63,17 +41,11 @@ def test_import_meta_and_relative_import_program_reports_module_urls():
     }
 
 
-def test_slashless_module_name_program_resolves_relative_imports_from_root():
+def test_run_with_slashless_module_id_resolves_relative_imports_from_root():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("slashless_relative_import.js"),
-            module_name="slashless_relative_import.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("slashless_relative_import.js")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeSlashlessRelativeImport") == {
         "value": 42,
@@ -86,13 +58,7 @@ def test_import_meta_only_dependency_program_runs_as_a_module():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("import_meta_only_entry.js"),
-            module_name="import_meta_only_entry.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("import_meta_only_entry.js")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeImportMetaOnly") == (
         "import_meta_only_dep.js"
@@ -103,13 +69,7 @@ def test_top_level_await_dependency_program_runs_as_a_module():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("top_level_await_entry.js"),
-            module_name="top_level_await_entry.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("top_level_await_entry.js")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeTopLevelAwaitBlock") == 42
 
@@ -121,13 +81,7 @@ def test_module_format_program_uses_extensions_and_package_type_metadata():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("module_format/entry.js"),
-            module_name="module_format/entry.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("module_format/entry.js")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeModuleFormats") == {
         "explicitModuleValue": 10,
@@ -170,15 +124,33 @@ def test_module_format_program_uses_extensions_and_package_type_metadata():
     }
 
 
+def test_run_executes_cjs_entrypoint_by_extension():
+    assert dukpy.run(_case_path("module_format/explicit.cjs")) == {
+        "value": 20,
+        "moduleId": _case_id("module_format/explicit.cjs"),
+        "requireId": _case_id("module_format/explicit.cjs"),
+        "thisIsExports": True,
+    }
+
+
+def test_run_executes_js_entrypoint_under_commonjs_package_metadata():
+    assert dukpy.run(_case_path("commonjs_pkg/main.js")) == {
+        "answer": 42,
+        "keywordNames": {"export": 1, "import": 2},
+        "keywordPropertyAccess": 7,
+        "asyncArrowType": "function",
+        "moduleId": _case_id("commonjs_pkg/main.js"),
+        "requireId": _case_id("commonjs_pkg/main.js"),
+        "thisIsExports": True,
+    }
+
+
 def test_module_format_extensionless_names_do_not_probe_mjs_or_cjs():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
     with pytest.raises(dukpy.JSRuntimeError) as import_exc:
-        interpreter.evaljs_module(
-            "import './module_format/extensionless_esm_only';",
-            module_name="module_format_extensionless_entry.mjs",
-        )
+        interpreter.run(_case_path("module_format/extensionless_entry.mjs"))
     assert "cannot find module: module_format/extensionless_esm_only" in str(
         import_exc.value
     )
@@ -193,17 +165,26 @@ def test_module_format_extensionless_names_do_not_probe_mjs_or_cjs():
 # CommonJS interop
 
 
+def test_esm_entrypoint_imports_package_less_ambiguous_dep_js_as_commonjs():
+    interpreter = dukpy.JSInterpreter()
+
+    assert interpreter.run(_case_path("package_less_pkg/entry.mjs")) == {}
+
+    assert interpreter.evaljs("globalThis.moduleRuntimePackageLessCommonJsImport") == {
+        "answer": 42,
+        "defaultIsNamespaceDefault": True,
+        "namespaceKeys": ["default", "exports", "module", "require"],
+        "moduleId": _case_id("package_less_pkg/dep.js"),
+        "requireId": _case_id("package_less_pkg/dep.js"),
+        "thisIsExports": True,
+    }
+
+
 def test_commonjs_import_program_exposes_default_export_object():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
-    assert (
-        interpreter.evaljs_module(
-            _read_case("commonjs_pkg/entry.js"),
-            module_name="commonjs_pkg/entry.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("commonjs_pkg/entry.mjs")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsImport") == {
         "answer": 42,
@@ -222,7 +203,7 @@ def test_commonjs_import_program_exposes_default_export_object():
     }
 
 
-def test_commonjs_module_ids_are_not_rewritten():
+def test_internal_mock_loader_commonjs_module_ids_are_not_rewritten():
     import_id = 'pkg/import-"quoted"\\control\x01line\u2028paragraph\u2029.js'
     require_id = 'pkg/require-"quoted"\\control\x01line\u2028paragraph\u2029.js'
     source = "exports.summary = { moduleId: module.id, requireId: require.id };"
@@ -238,8 +219,10 @@ def test_commonjs_module_ids_are_not_rewritten():
     interpreter = dukpy.JSInterpreter()
     _use_loader(interpreter, loader)
 
+    # Private module evaluation is intentional: these synthetic ids are loader
+    # boundary cases, not filesystem entrypoints.
     assert (
-        interpreter.evaljs_module(
+        interpreter._evaljs_module(
             "import cjs from "
             + json.dumps(import_id)
             + "; globalThis.moduleRuntimeCommonJsModuleIdImport = cjs.summary;",
@@ -284,7 +267,7 @@ def test_commonjs_source_is_not_inspected_by_dukpy():
     }
 
 
-def test_esm_import_and_global_require_escape_commonjs_source_the_same_way():
+def test_internal_mock_loader_esm_import_and_global_require_escape_commonjs_source_the_same_way():
     import_id = "pkg/import-escaped-source.js"
     require_id = "pkg/require-escaped-source.js"
     large_text = "x" * 70000
@@ -312,8 +295,10 @@ def test_esm_import_and_global_require_escape_commonjs_source_the_same_way():
     interpreter = dukpy.JSInterpreter()
     _use_loader(interpreter, loader)
 
+    # Private module evaluation is intentional: the mock loader supplies
+    # synthetic module ids and source that are not filesystem entrypoints.
     assert (
-        interpreter.evaljs_module(
+        interpreter._evaljs_module(
             "import cjs from "
             + json.dumps(import_id)
             + "; globalThis.moduleRuntimeCommonJsEscapedImport = cjs.summary;",
@@ -344,10 +329,7 @@ def test_commonjs_import_program_does_not_infer_named_exports_from_source():
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
     with pytest.raises(dukpy.JSRuntimeError) as exc:
-        interpreter.evaljs_module(
-            _read_case("commonjs_pkg/named_export_entry.js"),
-            module_name="commonjs_pkg/named_export_entry.js",
-        )
+        interpreter.run(_case_path("commonjs_pkg/named_export_entry.mjs"))
 
     assert "answer" in str(exc.value)
 
@@ -355,7 +337,7 @@ def test_commonjs_import_program_does_not_infer_named_exports_from_source():
 # Cache and retry behavior
 
 
-def test_commonjs_compile_time_syntax_errors_do_not_poison_retries():
+def test_internal_mock_loader_commonjs_compile_time_syntax_errors_do_not_poison_retries():
     require_id = "syntax-retry-require"
     import_id = "syntax-retry-import"
     bad_source = "exports.value = ;"
@@ -377,6 +359,8 @@ def test_commonjs_compile_time_syntax_errors_do_not_poison_retries():
     interpreter = dukpy.JSInterpreter()
     _use_loader(interpreter, loader)
 
+    # Private module evaluation is intentional: the mock loader changes source
+    # across loads to pin the native CommonJS wrapper retry boundary.
     with pytest.raises(dukpy.JSRuntimeError) as require_exc:
         interpreter.evaljs("require(" + json.dumps(require_id) + ")")
     assert "SyntaxError" in str(require_exc.value)
@@ -385,7 +369,7 @@ def test_commonjs_compile_time_syntax_errors_do_not_poison_retries():
     )
 
     with pytest.raises(dukpy.JSRuntimeError) as import_exc:
-        interpreter.evaljs_module(
+        interpreter._evaljs_module(
             "import cjs from "
             + json.dumps(import_id)
             + "; globalThis.moduleRuntimeCommonJsSyntaxRetry = cjs.value;",
@@ -393,7 +377,7 @@ def test_commonjs_compile_time_syntax_errors_do_not_poison_retries():
         )
     assert "SyntaxError" in str(import_exc.value)
     assert (
-        interpreter.evaljs_module(
+        interpreter._evaljs_module(
             "import cjs from "
             + json.dumps(import_id)
             + "; globalThis.moduleRuntimeCommonJsSyntaxRetry = cjs.value;",
@@ -415,13 +399,7 @@ def test_global_require_and_esm_commonjs_interop_share_module_cache():
         "var shared = require('commonjs_pkg/shared_cache'); "
         "shared.loadCount = 42; shared;"
     ) == {"loadCount": 42}
-    assert (
-        interpreter.evaljs_module(
-            _read_case("commonjs_pkg/shared_cache_entry.js"),
-            module_name="commonjs_pkg/shared_cache_entry.js",
-        )
-        == {}
-    )
+    assert interpreter.run(_case_path("commonjs_pkg/shared_cache_entry.mjs")) == {}
 
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsSharedCache") == {
         "importedLoadCount": 42,
@@ -446,10 +424,9 @@ def test_failed_commonjs_require_is_removed_from_runtime_cache():
 def test_failed_esm_commonjs_import_can_be_retried_with_same_module_name():
     interpreter = dukpy.JSInterpreter()
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
-    code = _read_case("commonjs_pkg/flaky_entry.js")
 
     with pytest.raises(dukpy.JSRuntimeError) as exc:
-        interpreter.evaljs_module(code, module_name="commonjs_pkg/flaky_entry.js")
+        interpreter.run(_case_path("commonjs_pkg/flaky_entry.mjs"))
 
     assert "Error: flaky cjs failed" in str(exc.value)
     assert (
@@ -459,13 +436,9 @@ def test_failed_esm_commonjs_import_can_be_retried_with_same_module_name():
         )
         == 1
     )
-    assert (
-        interpreter.evaljs_module(code, module_name="commonjs_pkg/flaky_entry.js") == {}
-    )
+    assert interpreter.run(_case_path("commonjs_pkg/flaky_entry.mjs")) == {}
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsFlakyAttempts") == 2
-    assert (
-        interpreter.evaljs_module(code, module_name="commonjs_pkg/flaky_entry.js") == {}
-    )
+    assert interpreter.run(_case_path("commonjs_pkg/flaky_entry.mjs")) == {}
     assert interpreter.evaljs("globalThis.moduleRuntimeCommonJsFlakyAttempts") == 2
 
 
@@ -477,10 +450,7 @@ def test_missing_esm_import_program_reports_missing_module_name():
     interpreter.loader.register_path(str(ACCEPTANCE_DIR))
 
     with pytest.raises(dukpy.JSRuntimeError) as exc:
-        interpreter.evaljs_module(
-            _read_case("error_pkg/missing_esm_import.js"),
-            module_name="error_pkg/missing_esm_import.js",
-        )
+        interpreter.run(_case_path("error_pkg/missing_esm_import.js"))
 
     assert "cannot find module: error_pkg/missing.js" in str(exc.value)
 
@@ -500,5 +470,13 @@ def _use_loader(interpreter, loader):
     interpreter.export_function("dukpy.load_module", loader.load)
 
 
+def _case_path(name):
+    return ACCEPTANCE_DIR / name
+
+
+def _case_id(name):
+    return "tests/acceptance/module_runtime/" + name
+
+
 def _read_case(name):
-    return (ACCEPTANCE_DIR / name).read_text(encoding="utf-8")
+    return _case_path(name).read_text(encoding="utf-8")
