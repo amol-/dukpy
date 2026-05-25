@@ -74,8 +74,8 @@ def test_top_level_run_executes_js_as_commonjs_by_default(tmp_path):
 
     assert dukpy.run(entry, offset=2) == {
         "value": 42,
-        "filename": str(entry),
-        "dirname": str(tmp_path),
+        "filename": entry.as_posix(),
+        "dirname": tmp_path.as_posix(),
         "firstWrapperArgumentIsExports": True,
     }
 
@@ -110,6 +110,10 @@ def test_cli_run_preserves_node_like_core_fs_shim(monkeypatch, tmp_path, caplog)
     assert "read through fs shim" in caplog.messages
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="simulates a non-native Windows entry path on POSIX",
+)
 def test_top_level_run_resolves_commonjs_relative_to_windows_entry_path(
     monkeypatch, tmp_path
 ):
@@ -288,7 +292,7 @@ def test_jsinterpreter_run_uses_compile_probe_for_ambiguous_js_esm(tmp_path):
     assert interpreter.run(entry) == {}
     assert interpreter.evaljs("globalThis.runAmbiguousJsEsm") == {
         "value": 42,
-        "url": str(entry),
+        "url": entry.as_posix(),
     }
 
 
