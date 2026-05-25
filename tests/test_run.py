@@ -134,9 +134,9 @@ def test_top_level_run_resolves_commonjs_relative_to_windows_entry_path(
     monkeypatch.setattr(
         os.path,
         "abspath",
-        lambda path: windows_entry
-        if os.fspath(path) == os.fspath(entry)
-        else real_abspath(path),
+        lambda path: (
+            windows_entry if os.fspath(path) == os.fspath(entry) else real_abspath(path)
+        ),
     )
 
     real_open = builtins.open
@@ -161,9 +161,7 @@ def test_entry_path_module_id_uses_registered_path_on_native_windows(monkeypatch
     monkeypatch.setattr(dukpy.module_loader.os, "path", ntpath)
     loader.register_path(r"C:\project")
 
-    path, module_id, module_format = loader.resolve_entry_path(
-        r"C:\project\entry.cjs"
-    )
+    path, module_id, module_format = loader.resolve_entry_path(r"C:\project\entry.cjs")
 
     assert path == r"C:\project\entry.cjs"
     assert module_id == "entry.cjs"
@@ -183,8 +181,7 @@ def test_commonjs_require_evaluates_detected_commonjs_dependency(tmp_path):
 def test_commonjs_require_rejects_explicit_mjs_without_running_as_commonjs(tmp_path):
     dep = tmp_path / "dep.mjs"
     dep.write_text(
-        "globalThis.requireExplicitMjsRan = true;\n"
-        "module.exports = {value: 42};\n",
+        "globalThis.requireExplicitMjsRan = true;\nmodule.exports = {value: 42};\n",
         encoding="utf-8",
     )
 
@@ -203,8 +200,7 @@ def test_commonjs_require_rejects_package_type_module_js_without_running(tmp_pat
     package.mkdir()
     (package / "package.json").write_text('{"type": "module"}', encoding="utf-8")
     (package / "dep.js").write_text(
-        "globalThis.requirePackageModuleRan = true;\n"
-        "module.exports = {value: 42};\n",
+        "globalThis.requirePackageModuleRan = true;\nmodule.exports = {value: 42};\n",
         encoding="utf-8",
     )
 
@@ -316,8 +312,7 @@ def test_esm_import_probes_package_less_ambiguous_js_dependency(tmp_path):
     entry = tmp_path / "entry.mjs"
     dep = tmp_path / "dep.js"
     entry.write_text(
-        "import { v } from './dep.js';\n"
-        "globalThis.runPackageLessAmbiguousJsDep = v;\n",
+        "import { v } from './dep.js';\nglobalThis.runPackageLessAmbiguousJsDep = v;\n",
         encoding="utf-8",
     )
     dep.write_text("export const v = 42;\n", encoding="utf-8")

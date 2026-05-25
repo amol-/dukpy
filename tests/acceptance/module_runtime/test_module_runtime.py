@@ -18,7 +18,9 @@ def test_native_esm_syntax_program_runs_and_updates_interpreter_state():
 
     interpreter = dukpy.JSInterpreter()
 
-    assert interpreter.run(_case_path("esm_syntax.js"), eval_as_module=40, module=2) == {}
+    assert (
+        interpreter.run(_case_path("esm_syntax.js"), eval_as_module=40, module=2) == {}
+    )
 
     assert interpreter.evaljs("globalThis.moduleRuntimeEsmSyntax") == {
         "answer": 42,

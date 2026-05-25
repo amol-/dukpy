@@ -148,9 +148,13 @@ class JSModuleLoader(object):
             current = parent
 
     def _module_id_for_entry_path(self, path):
-        if os.name != "nt" and "\\" in path and (
-            path.startswith("\\\\")
-            or (len(path) >= 3 and path[1] == ":" and path[2] == "\\")
+        if (
+            os.name != "nt"
+            and "\\" in path
+            and (
+                path.startswith("\\\\")
+                or (len(path) >= 3 and path[1] == ":" and path[2] == "\\")
+            )
         ):
             return self._path_id(path)
         return self._module_id(path)
