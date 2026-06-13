@@ -57,7 +57,7 @@ class JSModuleLoader(object):
     def resolve_entry_path(self, path):
         """Return absolute path, canonical module id, and format for an entrypoint."""
         path = os.path.abspath(os.fspath(path))
-        return path, self._module_id_for_entry_path(path), self.format_for_path(path)
+        return path, self._module_id(path), self.format_for_path(path)
 
     def format_for_path(self, path):
         """Return explicit Node-like format metadata for a JavaScript path.
@@ -146,18 +146,6 @@ class JSModuleLoader(object):
             if parent == current:
                 return None
             current = parent
-
-    def _module_id_for_entry_path(self, path):
-        if (
-            os.name != "nt"
-            and "\\" in path
-            and (
-                path.startswith("\\\\")
-                or (len(path) >= 3 and path[1] == ":" and path[2] == "\\")
-            )
-        ):
-            return self._path_id(path)
-        return self._module_id(path)
 
     def _module_id(self, module_file):
         module_file = os.path.realpath(module_file)

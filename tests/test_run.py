@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import builtins
 import json
 import logging
 import ntpath
-import os
 import sys
 
 import pytest
@@ -108,55 +106,6 @@ def test_cli_run_preserves_node_like_core_fs_shim(monkeypatch, tmp_path, caplog)
     dukpy.cli.main()
 
     assert "read through fs shim" in caplog.messages
-
-
-@pytest.mark.skipif(
-    os.name == "nt",
-    reason="simulates a non-native Windows entry path on POSIX",
-)
-def test_top_level_run_resolves_commonjs_relative_to_windows_entry_path(
-    monkeypatch, tmp_path
-):
-    project = tmp_path / "C:" / "project"
-    project.mkdir(parents=True)
-    entry = project / "entry.cjs"
-    dep = project / "dep.js"
-    entry.write_text(
-        "var dep = require('./dep');\n"
-        "module.exports = {\n"
-        "  value: dep.value + dukpy.offset,\n"
-        "  filename: __filename,\n"
-        "  dirname: __dirname\n"
-        "};\n",
-        encoding="utf-8",
-    )
-    dep.write_text("exports.value = 40;\n", encoding="utf-8")
-
-    monkeypatch.chdir(tmp_path)
-    windows_entry = r"C:\project\entry.cjs"
-    real_abspath = os.path.abspath
-    monkeypatch.setattr(
-        os.path,
-        "abspath",
-        lambda path: (
-            windows_entry if os.fspath(path) == os.fspath(entry) else real_abspath(path)
-        ),
-    )
-
-    real_open = builtins.open
-
-    def open_windows_entry(path, *args, **kwargs):
-        if path == windows_entry:
-            path = entry
-        return real_open(path, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "open", open_windows_entry)
-
-    assert dukpy.run(entry, offset=2) == {
-        "value": 42,
-        "filename": "C:/project/entry.cjs",
-        "dirname": "C:/project",
-    }
 
 
 def test_entry_path_module_id_uses_registered_path_on_native_windows(monkeypatch):
