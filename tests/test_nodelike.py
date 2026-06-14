@@ -2,14 +2,20 @@
 from dukpy.nodelike import NodeLikeInterpreter
 
 
-def test_node_like_fs_bridge_and_path_core_module_smoke(tmp_path):
-    # Keep fs bridge behavior and one representative core-module smoke (path)
+def test_node_like_core_shims_match_node_basics(tmp_path):
     (tmp_path / "fixture.txt").write_text("hello snowman ☃", encoding="utf-8")
 
     result = NodeLikeInterpreter().evaljs(
         """
         var fs = require('fs');
         var path = require('path');
+        var punycode = require('punycode');
+        var querystring = require('querystring');
+        var url = require('url');
+        var parsed = url.parse(
+            'https://mañana.example/search?q=hello%20world&q=again&snow=%E2%98%83',
+            true
+        );
         ({
             fileExists: !!fs.statSync(path.join(dukpy.base, 'fixture.txt')),
             fileContents: fs.readFileSync(
@@ -18,6 +24,17 @@ def test_node_like_fs_bridge_and_path_core_module_smoke(tmp_path):
             basename: path.basename('/tmp/example.less'),
             dirname: path.dirname('/tmp/example.less'),
             extname: path.extname('/tmp/example.less'),
+            relative: path.relative('/tmp/app/styles', '/tmp/app/images/logo.svg'),
+            resolved: path.resolve('/tmp/app', '../pkg', './index.js'),
+            parsedHost: parsed.host,
+            parsedQueryQ: parsed.query.q,
+            parsedSnow: parsed.query.snow,
+            encoded: querystring.stringify({
+                q: ['hello world', 'again'],
+                snow: '☃'
+            }),
+            ascii: punycode.toASCII('mañana.example'),
+            unicode: punycode.toUnicode('xn--maana-pta.example')
         });
         """,
         base=str(tmp_path),
@@ -29,6 +46,14 @@ def test_node_like_fs_bridge_and_path_core_module_smoke(tmp_path):
         "basename": "example.less",
         "dirname": "/tmp",
         "extname": ".less",
+        "relative": "../images/logo.svg",
+        "resolved": "/tmp/pkg/index.js",
+        "parsedHost": "xn--maana-pta.example",
+        "parsedQueryQ": ["hello world", "again"],
+        "parsedSnow": "☃",
+        "encoded": "q=hello%20world&q=again&snow=%E2%98%83",
+        "ascii": "xn--maana-pta.example",
+        "unicode": "mañana.example",
     }
 
 
