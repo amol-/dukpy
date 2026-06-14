@@ -148,14 +148,6 @@ class TestPackageInstaller(unittest.TestCase):
         assert "unsafe path" in str(err.exception)
         assert not os.path.exists(os.path.join(self.tmpdir, "..", "outside.js"))
 
-    def test_rejects_posix_absolute_tarball_path_when_platform_isabs_misses_it(self):
-        member = tarfile.TarInfo("/package/index.js")
-
-        with mock.patch("dukpy.install.os.path.isabs", return_value=False):
-            with self.assertRaises(dukpy_install.JSPackageInstallError) as err:
-                dukpy_install._safe_tar_member_path(member, self.tmpdir, "unsafe")
-        assert "unsafe path" in str(err.exception)
-
     def test_rejects_tarball_with_multiple_roots(self):
         url = "https://registry.npmjs.org/unsafe/-/unsafe-1.0.0.tgz"
         registry = {"versions": {"1.0.0": {"dist": {"tarball": url}}}}

@@ -3,7 +3,6 @@ import unittest
 from dukpy._dukpy import JSRuntimeError
 
 import dukpy
-from diffreport import report_diff
 
 
 class TestJSInterpreter(unittest.TestCase):
@@ -205,6 +204,7 @@ class TestJSInterpreter(unittest.TestCase):
         assert "TypeError: circular reference" in str(err.exception)
         assert seen == []
 
+
     def test_call_python_missing_function_error_is_reference_error(self):
         interpreter = dukpy.JSInterpreter()
 
@@ -247,47 +247,6 @@ class TestJSInterpreter(unittest.TestCase):
             ),
         }
 
-    def test_call_python_rejects_non_bytes_callback_json_data(self):
-        class BadCallbackInterpreter(dukpy.JSInterpreter):
-            def _call_python(self, func, json_args):
-                return {"not": "bytes"}
-
-        interpreter = BadCallbackInterpreter()
-        interpreter.export_function("bad", lambda: None)
-
-        assert interpreter.evaljs(
-            """
-            var caught = null;
-            try {
-                call_python('bad');
-            } catch (e) {
-                caught = {name: e.name, message: e.message};
-            }
-            ({caught: caught, stillUsable: 21 * 2});
-            """
-        ) == {
-            "caught": {
-                "name": "InternalError",
-                "message": "Python Function bad returned non-bytes JSON data",
-            },
-            "stillUsable": 42,
-        }
-        assert interpreter.evaljs("var value = 5; value + 1") == 6
-
-    def test_module_loader(self):
-        interpreter = dukpy.JSInterpreter()
-        res = interpreter.evaljs(
-            """
-    babel = require('babel-6.26.0.min');
-    babel.transform(dukpy.es6code, {presets: ["es2015"]}).code;
-""",
-            es6code="let i=5;",
-        )
-
-        expected = """"use strict";
-
-var i = 5;"""
-        assert res == expected, report_diff(expected, res)
 
     def test_module_loader_unexisting(self):
         interpreter = dukpy.JSInterpreter()

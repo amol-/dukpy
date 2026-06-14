@@ -75,26 +75,12 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
     JSValue json_args = JS_UNDEFINED;
     JSValue result = JS_EXCEPTION;
     PyObject *interpreter = (PyObject *)JS_GetContextOpaque(ctx);
-    PyObject *pyctx = NULL;
     PyObject *ret = NULL;
-    DukPyContext *dukpy_ctx;
     const char *args = NULL;
     const char *pyfuncname = NULL;
 
     if (!interpreter) {
         return JS_ThrowReferenceError(ctx, "Missing dukpy interpreter");
-    }
-
-    pyctx = PyObject_GetAttrString(interpreter, "_ctx");
-    if (!pyctx) {
-        PyErr_Clear();
-        return JS_ThrowReferenceError(ctx, "Missing dukpy interpreter context");
-    }
-    dukpy_ctx = get_context_from_capsule(pyctx);
-    Py_DECREF(pyctx);
-    if (!dukpy_ctx) {
-        PyErr_Clear();
-        return JS_ThrowReferenceError(ctx, "Invalid dukpy interpreter context");
     }
     if (argc < 1) {
         return JS_ThrowTypeError(ctx, "call_python expects a function name");
@@ -205,15 +191,6 @@ JSValue call_py_function(JSContext *ctx, JSValueConst this_val, int argc, JSValu
 
     if (ret == Py_None) {
         result = JS_UNDEFINED;
-        goto cleanup;
-    }
-
-    /* Re-enter QuickJS through JSON so callback returns obey the same value
-     * limits as arguments and evaljs results. */
-    if (!PyBytes_Check(ret)) {
-        result = JS_ThrowInternalError(ctx,
-                                       "Python Function %s returned non-bytes JSON data",
-                                       pyfuncname);
         goto cleanup;
     }
 

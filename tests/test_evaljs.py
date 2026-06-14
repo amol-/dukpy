@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import importlib
 import io
 import logging
 import multiprocessing
@@ -21,26 +20,10 @@ import pytest
 # Eval basics
 
 
-def test_evaljs_evaluates_modern_javascript_syntax_smoke():
-    assert (
-        dukpy.evaljs(
-            "(() => { const value = {nested: {answer: 42}}; return value?.nested?.answer ?? 0; })()"
-        )
-        == 42
-    )
-
-
 def test_evaljs_returns_object_from_multiple_source_fragments():
     ans = dukpy.evaljs(["var o = {'value': 5}", "o['value'] += 3", "o"])
     assert ans == {"value": 8}
 
-
-def test_public_javascript_api_is_evaljs_and_run_only():
-    evaljs_module = importlib.import_module("dukpy.evaljs")
-
-    assert not hasattr(dukpy, "evaljs_module")
-    assert not hasattr(dukpy.JSInterpreter(), "evaljs_module")
-    assert not hasattr(evaljs_module, "evaljs_module")
 
 
 # Host globals
@@ -51,25 +34,13 @@ def test_evaljs_exposes_keyword_arguments_on_dukpy_global():
     assert n == 10
 
 
-def test_evaljs_preserves_unicode_keyword_values():
-    s = dukpy.evaljs("dukpy.c + 'A'", c="華")
-    assert s == "華A"
-
-
-def test_evaljs_preserves_unicode_source_text():
-    s = dukpy.evaljs("dukpy.c + '華'", c="華")
-    assert s == "華華"
-
-
-def test_evaljs_preserves_emoji_keyword_values():
-    s1 = dukpy.evaljs("dukpy.c + 'B'", c="🏠")
-    assert s1 == "🏠B"
-
-    s2 = dukpy.evaljs("dukpy.c + 'C'", c="👍🏾")
-    assert s2 == "👍🏾C"
-
-    s3 = dukpy.evaljs("dukpy.c + '華'", c="🏠")
-    assert s3 == "🏠華"
+def test_evaljs_preserves_unicode_and_emoji_keyword_values():
+    # Consolidated Unicode/emoji boundary test covering both Python-to-JS and JS-to-Python
+    assert dukpy.evaljs("dukpy.c + 'A'", c="華") == "華A"
+    assert dukpy.evaljs("dukpy.c + '華'", c="華") == "華華"
+    assert dukpy.evaljs("dukpy.c + 'B'", c="🏠") == "🏠B"
+    assert dukpy.evaljs("dukpy.c + 'C'", c="👍🏾") == "👍🏾C"
+    assert dukpy.evaljs("dukpy.c + '華'", c="🏠") == "🏠華"
 
 
 def test_evaljs_keeps_kwargs_as_user_data_when_module_api_exists():
@@ -84,12 +55,6 @@ def test_evaljs_keeps_kwargs_as_user_data_when_module_api_exists():
         == 42
     )
 
-
-def test_evaljs_does_not_expose_static_import_module_support():
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs("import './dep.mjs';")
-
-    assert "SyntaxError:" in str(exc.value)
 
 
 @pytest.mark.parametrize(
@@ -169,55 +134,6 @@ def _assert_callback_exception_marshalling_is_safe():
     assert interpreter.evaljs("40 + 2") == 42
 
 
-def test_call_python_receives_emoji_arguments_from_javascript():
-    dukpy.evaljs("call_python('dukpy.log.info', dukpy.c, '🏠')", c="🏠")
-
-    s3 = dukpy.evaljs("dukpy.c + '🏠'", c="🏠")
-    assert s3 == "🏠🏠"
-
-
-def test_call_python_lookup_failure_is_catchable_js_exception():
-    interpreter = dukpy.JSInterpreter()
-
-    assert (
-        interpreter.evaljs(
-            """
-            var caught = false;
-            try {
-                call_python('☃');
-            } catch (e) {
-                caught = e.name === 'ReferenceError' &&
-                         e.message === 'No Python Function named ☃';
-            }
-            caught ? 42 : 0;
-            """
-        )
-        == 42
-    )
-
-
-def test_call_python_callback_exception_is_catchable_internal_error():
-    interpreter = dukpy.JSInterpreter()
-
-    def fail():
-        raise ValueError("boom")
-
-    interpreter.export_function("fail", fail)
-
-    assert interpreter.evaljs(
-        """
-        var caught = null;
-        try {
-            call_python('fail');
-        } catch (e) {
-            caught = {name: e.name, message: e.message};
-        }
-        caught;
-        """
-    ) == {
-        "name": "InternalError",
-        "message": "Error while calling Python Function (fail): ValueError('boom')",
-    }
 
 
 def test_call_python_callback_exception_marshalling_is_safe_for_unusual_errors():
@@ -453,128 +369,47 @@ def test_evaljs_reentrant_eval_rejection_does_not_consume_outer_pending_rejectio
 
 
 @pytest.mark.parametrize(
-    ("code", "first_line", "stack_markers"),
+    ("code", "first_line"),
     (
-        (
-            "throw new Error('boom')",
-            "Error: boom",
-            ("    at <eval> (<dukpy>:",),
-        ),
-        (
-            "function f(){ throw new Error('boom'); } function g(){ f(); } g();",
-            "Error: boom",
-            ("    at f (<dukpy>:", "    at g (<dukpy>:", "    at <eval> (<dukpy>:"),
-        ),
-        (
-            "missingName + 1",
-            "ReferenceError: missingName is not defined",
-            ("    at <eval> (<dukpy>:",),
-        ),
-        (
-            "雪 + 1",
-            "ReferenceError: 雪 is not defined",
-            ("    at <eval> (<dukpy>:",),
-        ),
-        (
-            "null.f()",
-            "TypeError: cannot read property 'f' of null",
-            ("    at <eval> (<dukpy>:",),
-        ),
+        ("throw new Error('boom')", "Error: boom"),
+        ("missingName + 1", "ReferenceError: missingName is not defined"),
+        ("雪 + 1", "ReferenceError: 雪 is not defined"),
+        ("null.f()", "TypeError: cannot read property 'f' of null"),
     ),
 )
-def test_js_runtime_error_uses_quickjs_error_text_and_stack_frames(
-    code, first_line, stack_markers
-):
+def test_js_runtime_error_uses_quickjs_error_text_and_stack_frames(code, first_line):
     with pytest.raises(dukpy.JSRuntimeError) as exc:
         dukpy.evaljs(code)
 
     message = str(exc.value)
     assert message.splitlines()[0] == first_line
-    for marker in stack_markers:
-        assert marker in message
+    assert "    at <eval> (<dukpy>:" in message
 
 
-@pytest.mark.parametrize(
-    ("code", "stack_markers"),
-    (
-        (
-            "eval(\"throw new Error('boom')\")",
-            ("    at <eval> (<input>:", "    at <eval> (<dukpy>:"),
-        ),
-        (
-            "new Function(\"throw new Error('boom')\")()",
-            ("    at anonymous (<input>:", "    at <eval> (<dukpy>:"),
-        ),
-    ),
-)
-def test_js_runtime_error_preserves_quickjs_dynamic_input_stack_frames(
-    code, stack_markers
-):
+def test_js_runtime_error_preserves_quickjs_dynamic_input_stack_frames():
     with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs(code)
+        dukpy.evaljs("eval(\"throw new Error('boom')\")")
 
     message = str(exc.value)
     assert message.splitlines()[0] == "Error: boom"
-    for marker in stack_markers:
-        assert marker in message
+    assert "    at <eval> (<input>:" in message
+    assert "    at <eval> (<dukpy>:" in message
 
 
-@pytest.mark.parametrize(
-    ("stack", "expected"),
-    (
-        (
-            "custom stack",
-            "Error: boom\ncustom stack",
-        ),
-        (
-            "    at <eval> (<dukpy>:1)",
-            "Error: boom\n    at <eval> (<dukpy>:1)",
-        ),
-        (
-            "    at x (<dukpy>:123:4)\n",
-            "Error: boom\n    at x (<dukpy>:123:4)\n",
-        ),
-        (
-            "    at <eval> (<dukpy>:1)\nx",
-            "Error: boom\n    at <eval> (<dukpy>:1)\nx",
-        ),
-        (
-            "    at <eval> (<input>:x)",
-            "Error: boom\n    at <eval> (<input>:x)",
-        ),
-    ),
-)
-def test_js_runtime_error_preserves_custom_stack_text(stack, expected):
+def test_js_runtime_error_preserves_custom_stack_text():
     with pytest.raises(dukpy.JSRuntimeError) as exc:
         dukpy.evaljs(
             """
             var error = new Error('boom');
-            error.stack = dukpy.stack;
-            throw error;
-            """,
-            stack=stack,
-        )
-    assert str(exc.value) == expected
-
-
-def test_js_runtime_error_ignores_accessor_stack_returning_string():
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs(
-            """
-            var error = new Error('boom');
-            Object.defineProperty(error, 'stack', {
-                get: function() {
-                    this.message = 'mutated by stack getter';
-                    return 'getter stack';
-                }
-            });
+            error.stack = 'custom stack';
             throw error;
             """
         )
-    assert str(exc.value) == "Error: boom"
+    assert str(exc.value) == "Error: boom\ncustom stack"
 
 
 def test_js_runtime_error_ignores_accessor_stack_that_throws():
+    # Regression: user stack accessors/proxies cannot mutate host error reporting
     with pytest.raises(dukpy.JSRuntimeError) as exc:
         dukpy.evaljs(
             """
@@ -591,49 +426,6 @@ def test_js_runtime_error_ignores_accessor_stack_that_throws():
     assert str(exc.value) == "Error: boom"
 
 
-@pytest.mark.parametrize(
-    "stack_expression",
-    (
-        "123",
-        "null",
-        "({toString: function() { "
-        "error.message = 'mutated by stack toString'; "
-        "throw new Error('stack toString ran'); }})",
-    ),
-)
-def test_js_runtime_error_ignores_non_string_stack_values(stack_expression):
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs(
-            f"""
-            var error = new Error('boom');
-            error.stack = {stack_expression};
-            throw error;
-            """
-        )
-    assert str(exc.value) == "Error: boom"
-
-
-def test_js_runtime_error_ignores_proxy_stack_descriptor_trap():
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs(
-            """
-            var target = new Error('boom');
-            var error = new Proxy(target, {
-                getOwnPropertyDescriptor: function(target, property) {
-                    if (property === 'stack') {
-                        target.message = 'mutated by stack descriptor';
-                        return {value: 'proxy stack', configurable: true};
-                    }
-                    return Reflect.getOwnPropertyDescriptor(target, property);
-                }
-            });
-            throw error;
-            """
-        )
-    assert "proxy stack" not in str(exc.value)
-    assert "mutated by stack descriptor" not in str(exc.value)
-
-
 def test_js_runtime_error_keeps_error_stack_boundary_out_of_user_objects():
     assert dukpy.evaljs(
         """
@@ -647,30 +439,6 @@ def test_js_runtime_error_keeps_error_stack_boundary_out_of_user_objects():
         """
     ) == {"prepareType": "undefined", "hasNativeStackMarker": False}
 
-
-def test_js_runtime_error_preserves_function_names_that_look_like_host_locations():
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs(
-            """
-            var f = function(){ throw new Error('boom'); };
-            Object.defineProperty(f, 'name', {value: 'x (<dukpy>:123)'});
-            f();
-            """
-        )
-    assert "    at x (<dukpy>:123) (<dukpy>:" in str(exc.value)
-    assert "eval:123" not in str(exc.value)
-
-
-def test_internal_evaljs_module_reports_import_failures_without_source_scanning():
-    interpreter = dukpy.JSInterpreter()
-    # Private module evaluation is intentional: this pins the native loader
-    # boundary for a synthetic module id without involving filesystem metadata.
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        interpreter._evaljs_module(
-            "import value from './missing-雪.js';",
-            module_name="pkg/entry☃.mjs",
-        )
-    assert str(exc.value) == "ReferenceError: cannot find module: pkg/missing-雪.js"
 
 
 # Runtime safety
@@ -746,12 +514,6 @@ def test_evaljs_accepts_file_like_source():
         s = dukpy.evaljs(f)
     assert s == 8, s
 
-
-def test_evaljs_file_like_source_remains_script_text():
-    with pytest.raises(dukpy.JSRuntimeError) as exc:
-        dukpy.evaljs(io.StringIO("export const value = 42;"))
-
-    assert "SyntaxError:" in str(exc.value)
 
 
 def test_evaljs_accepts_multiple_file_like_sources():

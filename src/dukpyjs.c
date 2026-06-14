@@ -22,260 +22,29 @@ int dukpy_should_interrupt(void) {
     return PyErr_CheckSignals() != 0;
 }
 
-/* QuickJS runtime callback: non-zero asks QuickJS to abort current execution. */
-static int dukpy_interrupt_handler(JSRuntime *rt, void *opaque) {
-    (void)rt;
-    (void)opaque;
-    return dukpy_should_interrupt();
-}
-
-/* Promise tracker identity lookup; stored promises are duplicated JSValues. */
+/* Forward declarations for private helpers */
+static int dukpy_interrupt_handler(JSRuntime *rt, void *opaque);
 static DukPyRejectedPromise *dukpy_find_rejected_promise(DukPyContext *context,
                                                          JSContext *ctx,
-                                                         JSValueConst promise) {
-    DukPyRejectedPromise *rejection;
-
-    for (rejection = context->rejected_promises; rejection; rejection = rejection->next) {
-        if (JS_IsSameValue(ctx, rejection->promise, promise)) {
-            return rejection;
-        }
-    }
-    return NULL;
-}
-
-/* Drop only rejections created by this eval so previous/outer calls keep ownership. */
+                                                         JSValueConst promise);
 static void dukpy_clear_rejected_promises_for_eval(DukPyContext *context, JSContext *ctx,
-                                                   unsigned long eval_id) {
-    DukPyRejectedPromise **current = &context->rejected_promises;
-
-    while (*current) {
-        DukPyRejectedPromise *rejection = *current;
-
-        if (rejection->eval_id == eval_id) {
-            *current = rejection->next;
-            JS_FreeValue(ctx, rejection->promise);
-            JS_FreeValue(ctx, rejection->reason);
-            free(rejection);
-            continue;
-        }
-        current = &rejection->next;
-    }
-}
-
-/* Convert the first unhandled rejection for this eval into the JS exception path. */
+                                                   unsigned long eval_id);
 static int dukpy_raise_rejected_promise_for_eval(DukPyContext *context, JSContext *ctx,
                                                  JSContext **exception_ctx,
-                                                 unsigned long eval_id) {
-    DukPyRejectedPromise *rejection;
-
-    for (rejection = context->rejected_promises; rejection; rejection = rejection->next) {
-        if (rejection->eval_id == eval_id) {
-            JS_Throw(ctx, JS_DupValue(ctx, rejection->reason));
-            dukpy_clear_rejected_promises_for_eval(context, ctx, eval_id);
-            *exception_ctx = ctx;
-            return -1;
-        }
-    }
-    return 0;
-}
-
-/* QuickJS host hook that records unhandled promise rejections until job drain. */
+                                                 unsigned long eval_id);
 static void dukpy_promise_rejection_tracker(JSContext *ctx, JSValueConst promise,
                                             JSValueConst reason, bool is_handled,
-                                            void *opaque) {
-    DukPyContext *context = (DukPyContext *)opaque;
-    DukPyRejectedPromise *rejection;
-
-    if (!context) {
-        return;
-    }
-
-    rejection = dukpy_find_rejected_promise(context, ctx, promise);
-    if (is_handled) {
-        DukPyRejectedPromise **current = &context->rejected_promises;
-
-        while (*current) {
-            if (*current == rejection) {
-                *current = rejection->next;
-                JS_FreeValue(ctx, rejection->promise);
-                JS_FreeValue(ctx, rejection->reason);
-                free(rejection);
-                return;
-            }
-            current = &(*current)->next;
-        }
-        return;
-    }
-
-    if (rejection) {
-        return;
-    }
-
-    rejection = calloc(1, sizeof(*rejection));
-    if (!rejection) {
-        return;
-    }
-    rejection->promise = JS_DupValue(ctx, promise);
-    rejection->reason = JS_DupValue(ctx, reason);
-    rejection->eval_id = context->current_eval_id;
-    rejection->next = context->rejected_promises;
-    context->rejected_promises = rejection;
-}
-
-/* Microtask boundary: run QuickJS jobs for the current eval and surface failures. */
+                                            void *opaque);
 static int dukpy_drain_pending_jobs(DukPyContext *context, JSContext *ctx,
                                     JSContext **exception_ctx,
-                                    unsigned long eval_id) {
-    if (context->drain_depth > 0) {
-        return dukpy_raise_rejected_promise_for_eval(context, ctx, exception_ctx, eval_id);
-    }
-
-    context->drain_depth++;
-    while (JS_IsJobPending(context->runtime)) {
-        JSContext *job_ctx = NULL;
-        int err;
-
-        if (dukpy_should_interrupt()) {
-            if (!PyErr_Occurred()) {
-                JS_ThrowInternalError(ctx, "interrupted");
-            }
-            context->unusable = 1;
-            context->drain_depth--;
-            *exception_ctx = ctx;
-            return -1;
-        }
-
-        err = JS_ExecutePendingJob(context->runtime, &job_ctx);
-        if (err < 0) {
-            if (JS_IsJobPending(context->runtime)) {
-                context->unusable = 1;
-            }
-            context->drain_depth--;
-            *exception_ctx = job_ctx ? job_ctx : ctx;
-            return -1;
-        }
-    }
-    context->drain_depth--;
-
-    return dukpy_raise_rejected_promise_for_eval(context, ctx, exception_ctx, eval_id);
-}
-
-/* Restore per-eval state before returning to Python, including nested eval callers. */
-static void dukpy_finish_eval(DukPyContext *ctx, unsigned long previous_eval_id) {
-    ctx->current_eval_id = previous_eval_id;
-    JS_RunGC(ctx->runtime);
-    JS_SetGCThreshold(ctx->runtime, DUKPY_RUNTIME_GC_THRESHOLD);
-}
-
-/* Allocate formatted error text with PyMem so Python-side cleanup is consistent. */
-static char *dukpy_copy_text(const char *text) {
-    size_t size = strlen(text) + 1;
-    char *copy = PyMem_Malloc(size);
-
-    if (copy) {
-        memcpy(copy, text, size);
-    }
-    return copy;
-}
-
-/* JSRuntimeError translation is intentionally narrow: QuickJS owns JavaScript
- * parsing, error text, and frame capture. DukPy carries QuickJS or user-provided
- * stack text unchanged and only joins the first line to an owned stack string. */
+                                    unsigned long eval_id);
+static void dukpy_finish_eval(DukPyContext *ctx, unsigned long previous_eval_id);
+static char *dukpy_copy_text(const char *text);
 static char *dukpy_format_js_exception(const char *exception_message,
-                                       const char *stack_message) {
-    char *first_line;
-    char *message;
-    size_t first_line_len;
-    size_t stack_len;
+                                       const char *stack_message);
+static PyObject *raise_js_exception_value(JSContext *ctx, JSValue exception);
+static PyObject *raise_js_exception(JSContext *ctx);
 
-    first_line = dukpy_copy_text(exception_message ? exception_message : "JavaScript Error");
-    if (!first_line || !stack_message || stack_message[0] == '\0') {
-        return first_line;
-    }
-
-    first_line_len = strlen(first_line);
-    stack_len = strlen(stack_message);
-    message = PyMem_Malloc(first_line_len + 1 + stack_len + 1);
-    if (!message) {
-        PyMem_Free(first_line);
-        return NULL;
-    }
-
-    memcpy(message, first_line, first_line_len);
-    message[first_line_len] = '\n';
-    memcpy(message + first_line_len + 1, stack_message, stack_len + 1);
-    PyMem_Free(first_line);
-    return message;
-}
-
-/* Translate a specific JS exception value into DukPyError and consume the JSValue. */
-static PyObject *raise_js_exception_value(JSContext *ctx, JSValue exception) {
-    JSPropertyDescriptor stack_desc;
-    JSAtom stack_atom;
-    const char *stack_message = NULL;
-    const char *exception_message = NULL;
-    char *message;
-    int stack_found = 0;
-    int stack_message_owned = 0;
-
-    if (PyErr_Occurred()) {
-        JS_FreeValue(ctx, exception);
-        return NULL;
-    }
-
-    if (JS_IsObject(exception) && !JS_IsProxy(exception)) {
-        stack_atom = JS_NewAtom(ctx, "stack");
-        if (stack_atom == JS_ATOM_NULL) {
-            JS_FreeValue(ctx, JS_GetException(ctx));
-        } else {
-            stack_found = JS_GetOwnProperty(ctx, &stack_desc, exception, stack_atom);
-            JS_FreeAtom(ctx, stack_atom);
-            if (stack_found < 0) {
-                JS_FreeValue(ctx, JS_GetException(ctx));
-                stack_found = 0;
-            }
-            if (stack_found && !(stack_desc.flags & JS_PROP_GETSET) &&
-                    JS_IsString(stack_desc.value)) {
-                stack_message = JS_ToCString(ctx, stack_desc.value);
-                stack_message_owned = stack_message != NULL;
-            }
-        }
-    }
-
-    exception_message = JS_ToCString(ctx, exception);
-    message = dukpy_format_js_exception(exception_message, stack_message);
-    PyErr_SetString(DukPyError, message ? message : "JavaScript Error");
-
-    if (message) {
-        PyMem_Free(message);
-    }
-    if (stack_message_owned) {
-        JS_FreeCString(ctx, stack_message);
-    }
-    if (exception_message) {
-        JS_FreeCString(ctx, exception_message);
-    }
-    if (stack_found) {
-        JS_FreeValue(ctx, stack_desc.value);
-        JS_FreeValue(ctx, stack_desc.getter);
-        JS_FreeValue(ctx, stack_desc.setter);
-    }
-    JS_FreeValue(ctx, exception);
-    return NULL;
-}
-
-/* Fetch QuickJS's pending exception and route it through the Python error boundary. */
-static PyObject *raise_js_exception(JSContext *ctx) {
-    JSValue exception;
-
-    if (PyErr_Occurred()) {
-        exception = JS_GetException(ctx);
-        JS_FreeValue(ctx, exception);
-        return NULL;
-    }
-
-    return raise_js_exception_value(ctx, JS_GetException(ctx));
-}
 
 /* Python extension entrypoint: allocate one bounded QuickJS runtime/context pair. */
 static PyObject *DukPy_create_context(PyObject *self, PyObject *_) {
@@ -538,6 +307,262 @@ finalize:
     Py_XDECREF(pyctx);
 
     return result;
+}
+
+
+/* QuickJS runtime callback: non-zero asks QuickJS to abort current execution. */
+static int dukpy_interrupt_handler(JSRuntime *rt, void *opaque) {
+    (void)rt;
+    (void)opaque;
+    return dukpy_should_interrupt();
+}
+
+/* Promise tracker identity lookup; stored promises are duplicated JSValues. */
+static DukPyRejectedPromise *dukpy_find_rejected_promise(DukPyContext *context,
+                                                         JSContext *ctx,
+                                                         JSValueConst promise) {
+    DukPyRejectedPromise *rejection;
+
+    for (rejection = context->rejected_promises; rejection; rejection = rejection->next) {
+        if (JS_IsSameValue(ctx, rejection->promise, promise)) {
+            return rejection;
+        }
+    }
+    return NULL;
+}
+
+/* Drop only rejections created by this eval so previous/outer calls keep ownership. */
+static void dukpy_clear_rejected_promises_for_eval(DukPyContext *context, JSContext *ctx,
+                                                   unsigned long eval_id) {
+    DukPyRejectedPromise **current = &context->rejected_promises;
+
+    while (*current) {
+        DukPyRejectedPromise *rejection = *current;
+
+        if (rejection->eval_id == eval_id) {
+            *current = rejection->next;
+            JS_FreeValue(ctx, rejection->promise);
+            JS_FreeValue(ctx, rejection->reason);
+            free(rejection);
+            continue;
+        }
+        current = &rejection->next;
+    }
+}
+
+/* Convert the first unhandled rejection for this eval into the JS exception path. */
+static int dukpy_raise_rejected_promise_for_eval(DukPyContext *context, JSContext *ctx,
+                                                 JSContext **exception_ctx,
+                                                 unsigned long eval_id) {
+    DukPyRejectedPromise *rejection;
+
+    for (rejection = context->rejected_promises; rejection; rejection = rejection->next) {
+        if (rejection->eval_id == eval_id) {
+            JS_Throw(ctx, JS_DupValue(ctx, rejection->reason));
+            dukpy_clear_rejected_promises_for_eval(context, ctx, eval_id);
+            *exception_ctx = ctx;
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* QuickJS host hook that records unhandled promise rejections until job drain. */
+static void dukpy_promise_rejection_tracker(JSContext *ctx, JSValueConst promise,
+                                            JSValueConst reason, bool is_handled,
+                                            void *opaque) {
+    DukPyContext *context = (DukPyContext *)opaque;
+    DukPyRejectedPromise *rejection;
+
+    if (!context) {
+        return;
+    }
+
+    rejection = dukpy_find_rejected_promise(context, ctx, promise);
+    if (is_handled) {
+        DukPyRejectedPromise **current = &context->rejected_promises;
+
+        while (*current) {
+            if (*current == rejection) {
+                *current = rejection->next;
+                JS_FreeValue(ctx, rejection->promise);
+                JS_FreeValue(ctx, rejection->reason);
+                free(rejection);
+                return;
+            }
+            current = &(*current)->next;
+        }
+        return;
+    }
+
+    if (rejection) {
+        return;
+    }
+
+    rejection = calloc(1, sizeof(*rejection));
+    if (!rejection) {
+        return;
+    }
+    rejection->promise = JS_DupValue(ctx, promise);
+    rejection->reason = JS_DupValue(ctx, reason);
+    rejection->eval_id = context->current_eval_id;
+    rejection->next = context->rejected_promises;
+    context->rejected_promises = rejection;
+}
+
+/* Microtask boundary: run QuickJS jobs for the current eval and surface failures. */
+static int dukpy_drain_pending_jobs(DukPyContext *context, JSContext *ctx,
+                                    JSContext **exception_ctx,
+                                    unsigned long eval_id) {
+    if (context->drain_depth > 0) {
+        return dukpy_raise_rejected_promise_for_eval(context, ctx, exception_ctx, eval_id);
+    }
+
+    context->drain_depth++;
+    while (JS_IsJobPending(context->runtime)) {
+        JSContext *job_ctx = NULL;
+        int err;
+
+        if (dukpy_should_interrupt()) {
+            if (!PyErr_Occurred()) {
+                JS_ThrowInternalError(ctx, "interrupted");
+            }
+            context->unusable = 1;
+            context->drain_depth--;
+            *exception_ctx = ctx;
+            return -1;
+        }
+
+        err = JS_ExecutePendingJob(context->runtime, &job_ctx);
+        if (err < 0) {
+            if (JS_IsJobPending(context->runtime)) {
+                context->unusable = 1;
+            }
+            context->drain_depth--;
+            *exception_ctx = job_ctx ? job_ctx : ctx;
+            return -1;
+        }
+    }
+    context->drain_depth--;
+
+    return dukpy_raise_rejected_promise_for_eval(context, ctx, exception_ctx, eval_id);
+}
+
+/* Restore per-eval state before returning to Python, including nested eval callers. */
+static void dukpy_finish_eval(DukPyContext *ctx, unsigned long previous_eval_id) {
+    ctx->current_eval_id = previous_eval_id;
+    JS_RunGC(ctx->runtime);
+    JS_SetGCThreshold(ctx->runtime, DUKPY_RUNTIME_GC_THRESHOLD);
+}
+
+/* Allocate formatted error text with PyMem so Python-side cleanup is consistent. */
+static char *dukpy_copy_text(const char *text) {
+    size_t size = strlen(text) + 1;
+    char *copy = PyMem_Malloc(size);
+
+    if (copy) {
+        memcpy(copy, text, size);
+    }
+    return copy;
+}
+
+/* JSRuntimeError translation is intentionally narrow: QuickJS owns JavaScript
+ * parsing, error text, and frame capture. DukPy carries QuickJS or user-provided
+ * stack text unchanged and only joins the first line to an owned stack string. */
+static char *dukpy_format_js_exception(const char *exception_message,
+                                       const char *stack_message) {
+    char *first_line;
+    char *message;
+    size_t first_line_len;
+    size_t stack_len;
+
+    first_line = dukpy_copy_text(exception_message ? exception_message : "JavaScript Error");
+    if (!first_line || !stack_message || stack_message[0] == '\0') {
+        return first_line;
+    }
+
+    first_line_len = strlen(first_line);
+    stack_len = strlen(stack_message);
+    message = PyMem_Malloc(first_line_len + 1 + stack_len + 1);
+    if (!message) {
+        PyMem_Free(first_line);
+        return NULL;
+    }
+
+    memcpy(message, first_line, first_line_len);
+    message[first_line_len] = '\n';
+    memcpy(message + first_line_len + 1, stack_message, stack_len + 1);
+    PyMem_Free(first_line);
+    return message;
+}
+
+/* Translate a specific JS exception value into DukPyError and consume the JSValue. */
+static PyObject *raise_js_exception_value(JSContext *ctx, JSValue exception) {
+    JSPropertyDescriptor stack_desc;
+    JSAtom stack_atom;
+    const char *stack_message = NULL;
+    const char *exception_message = NULL;
+    char *message;
+    int stack_found = 0;
+    int stack_message_owned = 0;
+
+    if (PyErr_Occurred()) {
+        JS_FreeValue(ctx, exception);
+        return NULL;
+    }
+
+    if (JS_IsObject(exception) && !JS_IsProxy(exception)) {
+        stack_atom = JS_NewAtom(ctx, "stack");
+        if (stack_atom == JS_ATOM_NULL) {
+            JS_FreeValue(ctx, JS_GetException(ctx));
+        } else {
+            stack_found = JS_GetOwnProperty(ctx, &stack_desc, exception, stack_atom);
+            JS_FreeAtom(ctx, stack_atom);
+            if (stack_found < 0) {
+                JS_FreeValue(ctx, JS_GetException(ctx));
+                stack_found = 0;
+            }
+            if (stack_found && !(stack_desc.flags & JS_PROP_GETSET) &&
+                    JS_IsString(stack_desc.value)) {
+                stack_message = JS_ToCString(ctx, stack_desc.value);
+                stack_message_owned = stack_message != NULL;
+            }
+        }
+    }
+
+    exception_message = JS_ToCString(ctx, exception);
+    message = dukpy_format_js_exception(exception_message, stack_message);
+    PyErr_SetString(DukPyError, message ? message : "JavaScript Error");
+
+    if (message) {
+        PyMem_Free(message);
+    }
+    if (stack_message_owned) {
+        JS_FreeCString(ctx, stack_message);
+    }
+    if (exception_message) {
+        JS_FreeCString(ctx, exception_message);
+    }
+    if (stack_found) {
+        JS_FreeValue(ctx, stack_desc.value);
+        JS_FreeValue(ctx, stack_desc.getter);
+        JS_FreeValue(ctx, stack_desc.setter);
+    }
+    JS_FreeValue(ctx, exception);
+    return NULL;
+}
+
+/* Fetch QuickJS's pending exception and route it through the Python error boundary. */
+static PyObject *raise_js_exception(JSContext *ctx) {
+    JSValue exception;
+
+    if (PyErr_Occurred()) {
+        exception = JS_GetException(ctx);
+        JS_FreeValue(ctx, exception);
+        return NULL;
+    }
+
+    return raise_js_exception_value(ctx, JS_GetException(ctx));
 }
 
 
