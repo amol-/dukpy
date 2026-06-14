@@ -204,7 +204,6 @@ class TestJSInterpreter(unittest.TestCase):
         assert "TypeError: circular reference" in str(err.exception)
         assert seen == []
 
-
     def test_call_python_missing_function_error_is_reference_error(self):
         interpreter = dukpy.JSInterpreter()
 
@@ -246,7 +245,6 @@ class TestJSInterpreter(unittest.TestCase):
                 "Error while calling Python Function (fail): ValueError('boom 雪')"
             ),
         }
-
 
     def test_module_loader_unexisting(self):
         interpreter = dukpy.JSInterpreter()

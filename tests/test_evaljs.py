@@ -25,7 +25,6 @@ def test_evaljs_returns_object_from_multiple_source_fragments():
     assert ans == {"value": 8}
 
 
-
 # Host globals
 
 
@@ -54,7 +53,6 @@ def test_evaljs_keeps_kwargs_as_user_data_when_module_api_exists():
         )
         == 42
     )
-
 
 
 @pytest.mark.parametrize(
@@ -132,8 +130,6 @@ def _assert_callback_exception_marshalling_is_safe():
         )
 
     assert interpreter.evaljs("40 + 2") == 42
-
-
 
 
 def test_call_python_callback_exception_marshalling_is_safe_for_unusual_errors():
@@ -440,7 +436,6 @@ def test_js_runtime_error_keeps_error_stack_boundary_out_of_user_objects():
     ) == {"prepareType": "undefined", "hasNativeStackMarker": False}
 
 
-
 # Runtime safety
 
 
@@ -513,7 +508,6 @@ def test_evaljs_accepts_file_like_source():
     with open(testfile) as f:
         s = dukpy.evaljs(f)
     assert s == 8, s
-
 
 
 def test_evaljs_accepts_multiple_file_like_sources():
