@@ -9,14 +9,9 @@ as possible to Node.js semantics for the JavaScript surface, within what QuickJS
 itself allows.
 
 Do **not** implement JavaScript parsing, lexing, or semantic detection in DukPy
-code. In particular:
-
-- Do not inspect JavaScript source character-by-character to infer syntax.
-- Do not classify JavaScript as modules/scripts/CommonJS by scanning strings.
-- Do not detect `import`, `export`, `await`, comments, strings, templates, or
-  identifiers with handwritten C or Python logic.
-- Do not rewrite JavaScript source based on DukPy's own understanding of the
-  language grammar.
+code. Do not parse, lex, scan, classify, or rewrite JavaScript text in DukPy
+code. QuickJS is the only component that should inspect or understand JavaScript
+syntax.
 
 QuickJS is the JavaScript parser and evaluator. If we need to know whether
 JavaScript is valid, whether it is a module, or how syntax should behave, route
