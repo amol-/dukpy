@@ -23,25 +23,10 @@ for package compatibility.
 
 It comes with a bunch of common transpilers built-in for convenience:
 
-    - *CoffeeScript*
     - *BabelJS*
     - *TypeScript*
     - *JSX*
     - *LESS*
-
-CoffeeScript Compiler
----------------------
-
-Using the coffeescript compiler is as easy as running:
-
-.. code:: python
-
-    >>> import dukpy
-    >>> dukpy.coffee_compile('''
-    ...     fill = (container, liquid = "coffee") ->
-    ...         "Filling the #{container} with #{liquid}..."
-    ... ''')
-    '(function() {\n  var fill;\n\n  fill = function*(container, liquid) {\n    if (liquid == null) {\n      liquid = "coffee";\n    }\n    return "Filling the " + container + " with " + liquid + "...";\n  };\n\n}).call(this);\n'
 
 TypeScript Transpiler
 ---------------------
@@ -272,15 +257,7 @@ Multiple script can be passed in a list or tuple:
 This is useful when your code requires dependencies to work,
 as you can load the dependency and then your code.
 
-This is actually how the coffeescript compiler is implemented
-by DukPy itself:
-
-.. code:: python
-
-    def coffee_compile(source):
-        with open(COFFEE_COMPILER, 'r') as coffeescript_js:
-            return evaljs((coffeescript_js.read(), 'CoffeeScript.compile(dukpy.coffeecode)'),
-                          coffeecode=source)
+other transpilers in DukPy itself:
 
 Using a persistent JavaScript Interpreter
 -----------------------------------------

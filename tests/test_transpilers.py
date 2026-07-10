@@ -8,17 +8,6 @@ from dukpy.lessc import LessCompilerError
 
 
 class TestTranspilers(unittest.TestCase):
-    def test_coffee(self):
-        ans = dukpy.coffee_compile("""
-fill = (container, liquid = "coffee") ->
-    "Filling the #{container} with #{liquid}..."
-@coffee_result = [fill("cup"), fill("kettle", "tea")]
-""")
-        assert dukpy.evaljs([ans, "coffee_result"]) == [
-            "Filling the cup with coffee...",
-            "Filling the kettle with tea...",
-        ]
-
     def test_babel(self):
         ans = dukpy.babel_compile("""
 export function greet(name = "Ada") {
