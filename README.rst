@@ -10,9 +10,17 @@ dukpy
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
    :target: https://pypi.org/p/dukpy
 
+.. raw:: html
 
-DukPy is a simple javascript interpreter for Python built on top of
-duktape engine **without any external dependency**.
+    <img align="left" width="100px" src="dukpy_logo.png" alt="DukPy logo">
+
+
+DukPy is a simple JavaScript interpreter for Python **without any external
+runtime dependency**.
+
+The name comes from DukPy's original Duktape-based implementation and is kept
+for package compatibility.
+
 It comes with a bunch of common transpilers built-in for convenience:
 
     - *CoffeeScript*
@@ -199,6 +207,34 @@ resulting value as far as it is possible to encode it in JSON.
 
 If execution fails a ``dukpy.JSRuntimeError`` exception is raised
 with the failure reason.
+
+Running JavaScript files
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``dukpy.run`` or, when reusing an interpreter, ``JSInterpreter.run`` to run a
+JavaScript file entrypoint:
+
+.. code:: python
+
+    >>> import dukpy
+    >>> dukpy.run("./main.mjs")
+    {}
+
+``evaljs`` always evaluates source text as a script. ``run`` reads a file and
+uses Node-like entrypoint classification: ``.mjs`` files are native ES modules,
+``.cjs`` files are CommonJS, and ``.js`` files follow the nearest
+``package.json`` ``type`` of ``module`` or ``commonjs``. Ambiguous ``.js``
+entrypoints and dependencies are probed by QuickJS by compiling the CommonJS
+wrapper first and falling back to native ES module compilation when that fails;
+DukPy does not scan source text for ``import``, ``export``, ``await``, comments,
+strings, or identifiers. Entrypoints use the same canonical module id as the
+loader; for files under a registered loader path, ``import.meta.url`` and
+CommonJS ``module.id`` may be relative to that path.
+
+When ES modules import files classified as CommonJS, DukPy exposes a minimal
+synthetic namespace: ``default`` is ``module.exports``, and the only named
+exports are ``module``, ``exports``, and ``require``. DukPy does not infer named
+exports from CommonJS source; use a default import for CommonJS API objects.
 
 Passing Arguments
 ~~~~~~~~~~~~~~~~~

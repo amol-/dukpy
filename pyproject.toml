@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dukpy"
+version = "0.6.0"
+description = "Simple JavaScript interpreter for Python"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = ">=3.9"
+keywords = ["javascript", "compiler", "babeljs", "jsx", "coffeescript", "typescript"]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Alessandro Molina", email = "alessandro@molina.fyi" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: JavaScript",
+]
+
+[project.optional-dependencies]
+testing = ["pytest", "pytest-cov", "mock", "build", "webassets"]
+webassets = ["webassets"]
+
+[project.scripts]
+dukpy-install = "dukpy.install:main"
+dukpy = "dukpy.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/amol-/dukpy"
+
+[tool.setuptools]
+packages = ["dukpy", "dukpy.webassets"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+dukpy = [
+  "jsruntime/*.js",
+  "jscore/*.js",
+  "jsmodules/*.js",
+  "jsmodules/*/*.js",
+  "jsmodules/*/*/*.js",
+  "jsmodules/*/*/*/*.js",
+]
+
+[tool.setuptools.exclude-package-data]
+dukpy = ["_dukpy*.so", "_dukpy*.pyd", "_dukpy*.dll", "_dukpy*.dylib"]
+
+[tool.ruff]
+# Match the package resolver policy declared in project.requires-python.
+target-version = "py39"
+# Preserve the existing Black/Ruff-compatible width used by the Python sources.
+line-length = 88
+# Exclude vendored JavaScript and legacy engine snapshots from Python linting.
+extend-exclude = ["src/duktape", "dukpy/jsmodules", "dukpy/jscore"]
+
+[tool.ruff.lint]
+select = [
+  "E", # pycodestyle errors catch syntax-adjacent style problems cheaply.
+  "F", # Pyflakes catches undefined names and unused imports without type setup.
+]
+ignore = [
+  "E501", # Long legacy strings and embedded JavaScript are clearer left unwrapped.
+]

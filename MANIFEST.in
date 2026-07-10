@@ -1,4 +1,8 @@
-recursive-include src *.h
+include src/*.c src/*.h
+recursive-include src/quickjs *.c *.h VERSION VENDORING.json
+recursive-include dukpy/jsruntime *.js
 recursive-include dukpy/jscore *.js
 recursive-include dukpy/jsmodules *.js
 include LICENSE
+include scripts/update_quickjs_vendor.py
+global-exclude *.so *.pyd *.dll *.dylib

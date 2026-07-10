@@ -5,11 +5,11 @@ from webassets.filter import Filter
 import dukpy
 
 
-__all__ = ('TypeScript', )
+__all__ = ("TypeScript",)
 
 
 class TypeScript(Filter):
-    name = 'typescript'
+    name = "typescript"
     max_debug_level = None
 
     def input(self, _in, out, **kw):

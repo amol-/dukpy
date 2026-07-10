@@ -8,21 +8,19 @@ from webassets.filter import Filter
 import dukpy
 
 
-__all__ = ('BabelJS', )
+__all__ = ("BabelJS",)
 
 
 class BabelJS(Filter):
-    name = 'babeljs'
+    name = "babeljs"
     max_debug_level = None
-    options = {
-        'loader': 'BABEL_MODULES_LOADER'
-    }
+    options = {"loader": "BABEL_MODULES_LOADER"}
 
     def input(self, _in, out, **kw):
-        options = {'filename': os.path.basename(kw['source_path'])}
-        if self.loader == 'systemjs':
-            options['plugins'] = ['transform-es2015-modules-systemjs']
-        elif self.loader == 'umd':
-            options['plugins'] = ['transform-es2015-modules-umd']
+        options = {"filename": os.path.basename(kw["source_path"])}
+        if self.loader == "systemjs":
+            options["plugins"] = ["transform-es2015-modules-systemjs"]
+        elif self.loader == "umd":
+            options["plugins"] = ["transform-es2015-modules-umd"]
         src = dukpy.babel_compile(_in.read(), **options)
-        out.write(src['code'])
+        out.write(src["code"])

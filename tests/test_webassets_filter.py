@@ -1,13 +1,10 @@
 from __future__ import unicode_literals
 
-from dukpy.webassets import BabelJS, TypeScript, CompileLess, BabelJSX
-from diffreport import report_diff
-from webassets.test import TempEnvironmentHelper
+import re
 
-try:
-    from io import StringIO
-except:
-    from StringIO import StringIO
+import dukpy
+from dukpy.webassets import BabelJS, TypeScript, CompileLess, BabelJSX
+from webassets.test import TempEnvironmentHelper
 
 
 class PyTestTempEnvironmentHelper(TempEnvironmentHelper):
@@ -32,69 +29,68 @@ class TestAssetsFilters(PyTestTempEnvironmentHelper):
     @classmethod
     def setup_class(cls):
         from webassets.filter import register_filter
+
         register_filter(BabelJS)
         register_filter(TypeScript)
 
     def test_babeljs_filter(self):
-        ES6CODE = '''
-class Point {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    toString() {
-        return '(' + this.x + ', ' + this.y + ')';
-    }
+        ES6CODE = """
+export function greet(name = "Ada") {
+    return `Hello ${name}`;
 }
-'''
-        self.create_files({'in': ES6CODE})
-        self.mkbundle('in', filters='babeljs', output='out').build()
-        ans = self.get('out')
+globalThis.babel_result = greet();
+"""
+        self.create_files({"in": ES6CODE})
+        self.mkbundle("in", filters="babeljs", output="out").build()
+        ans = self.get("out")
 
-        assert '''var Point = function () {
-    function Point(x, y) {
-''' in ans, ans
-        
+        assert (
+            dukpy.evaljs(
+                [
+                    "var exports = {};",
+                    ans,
+                    "exports.greet('Grace') + ' / ' + globalThis.babel_result",
+                ]
+            )
+            == "Hello Grace / Hello Ada"
+        )
+
     def test_typescript_filter(self):
-        typeScript_source = '''
+        typeScript_source = """
 class Greeter {
     constructor(public greeting: string) { }
     greet() {
         return "<h1>" + this.greeting + "</h1>";
     }
 };
-var greeter = new Greeter("Hello, world!");
-'''
-
-        self.create_files({'in': typeScript_source})
-        self.mkbundle('in', filters='typescript', output='out').build()
-        ans = self.get('out')
-
-        expected = """System.register([], function(exports_1) {
-    var Greeter, greeter;
-    return {
-        setters:[],
-        execute: function() {
-            var Greeter = (function () {
-                function Greeter(greeting) {
-                    this.greeting = greeting;
-                }
-                Greeter.prototype.greet = function () {
-                    return "<h1>" + this.greeting + "</h1>";
-                };
-                return Greeter;
-            })();
-            ;
-            var greeter = new Greeter("Hello, world!");
-        }
-    }
-});
+globalThis.typescript_result = new Greeter("Hello, world!").greet();
 """
-        assert expected in ans, report_diff(expected, ans)
+
+        self.create_files({"in": typeScript_source})
+        self.mkbundle("in", filters="typescript", output="out").build()
+        ans = self.get("out")
+
+        assert (
+            dukpy.evaljs(
+                [
+                    """
+var System = {
+    register: function(deps, factory) {
+        var module = factory(function(){});
+        module.execute();
+    }
+};
+""",
+                    ans,
+                    "globalThis.typescript_result",
+                ]
+            )
+            == "<h1>Hello, world!</h1>"
+        )
 
 
 class TestLessFilter(PyTestTempEnvironmentHelper):
-    LESS_CODE = '''
+    LESS_CODE = """
 @import "colors.less";
 .box-shadow(@style, @c) when (iscolor(@c)) {
     -webkit-box-shadow: @style @c;
@@ -107,35 +103,38 @@ class TestLessFilter(PyTestTempEnvironmentHelper):
     color: saturate(@green, 5%);
     border-color: lighten(@green, 30%);
     div { .box-shadow(0 0 5px, 30%) }
-}'''
+}"""
 
     @classmethod
     def setup_class(cls):
         from webassets.filter import register_filter
+
         register_filter(CompileLess)
 
     def test_less_with_imports(self):
-        self.create_files({
-            'in': self.LESS_CODE,
-            'colors.less': '@green: #7bab2e;'
-        })
-        self.mkbundle('in', filters='lessc', output='out').build()
-        assert self.get('out') == """.box {
-  color: #7cb029;
-  border-color: #c2e191;
-}
-.box div {
-  -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-}
-"""
+        self.create_files({"in": self.LESS_CODE, "colors.less": "@green: #7bab2e;"})
+        self.mkbundle("in", filters="lessc", output="out").build()
+        ans = self.get("out")
+        assert re.search(r"\.box\s*\{[^}]*\bcolor\s*:\s*#7cb029\b", ans)
+        assert re.search(r"\.box\s*\{[^}]*\bborder-color\s*:\s*#c2e191\b", ans)
+        assert re.search(
+            r"\.box\s+div\s*\{[^}]*-webkit-box-shadow\s*:\s*"
+            r"0\s+0\s+5px\s+rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.3\s*\)",
+            ans,
+        )
+        assert re.search(
+            r"\.box\s+div\s*\{[^}]*(?<!-)box-shadow\s*:\s*"
+            r"0\s+0\s+5px\s+rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.3\s*\)",
+            ans,
+        )
 
 
 class TestJSXFilter(PyTestTempEnvironmentHelper):
-    JSX_CODE = '''
-import Component from 'react';
+    JSX_CODE = """
+import React from 'react/react';
+var ReactDOM = require('react/react-dom-server');
 
-class HelloWorld extends Component {
+class HelloWorld extends React.Component {
   render() {
     return (
       <div className="helloworld">
@@ -144,22 +143,50 @@ class HelloWorld extends Component {
     );
   }
 }
-'''
+globalThis.jsx_filter_result = ReactDOM.renderToStaticMarkup(
+  <HelloWorld data={{name: 'Ada'}}/>, null
+);
+"""
 
     @classmethod
     def setup_class(cls):
         from webassets.filter import register_filter
+
         register_filter(BabelJSX)
 
     def test_jsx(self):
-        self.create_files({'in': self.JSX_CODE})
-        self.mkbundle('in', filters='babeljsx', output='out').build()
-        assert '_createClass(HelloWorld, ' in self.get('out')
-        assert 'require' in self.get('out')
+        self.create_files({"in": self.JSX_CODE})
+        self.mkbundle("in", filters="babeljsx", output="out").build()
+        assert dukpy.evaljs([self.get("out"), "globalThis.jsx_filter_result"]) == (
+            '<div class="helloworld">Hello Ada</div>'
+        )
 
     def test_jsx_options(self):
-        self.create_files({'in': self.JSX_CODE})
-        self.mkbundle('in', filters='babeljsx', output='out', config={
-            'babel_modules_loader': 'systemjs'
-        }).build()
-        assert 'System.register(["react"]' in self.get('out')
+        self.create_files({"in": self.JSX_CODE})
+        self.mkbundle(
+            "in",
+            filters="babeljsx",
+            output="out",
+            config={"babel_modules_loader": "systemjs"},
+        ).build()
+        ans = self.get("out")
+        assert dukpy.evaljs(
+            [
+                """
+var system_dependencies = [];
+var System = {
+    register: function(deps, factory) {
+        system_dependencies = deps;
+        var module = factory(function(){});
+        module.setters[0]({default: require('react/react')});
+        module.execute();
+    }
+};
+""",
+                ans,
+                "({deps: system_dependencies, html: globalThis.jsx_filter_result})",
+            ]
+        ) == {
+            "deps": ["react/react"],
+            "html": '<div class="helloworld">Hello Ada</div>',
+        }

@@ -6,30 +6,32 @@ import dukpy
 
 class TestReactJS(unittest.TestCase):
     def test_hello_world(self):
-        jsx = dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
+        jsx = dukpy.jsx_compile("var react_hello = <h1>Hello, world!</h1>;")
         jsi = dukpy.JSInterpreter()
-        result = jsi.evaljs([
-            '''
+        result = jsi.evaljs(
+            [
+                """
             var React = require('react/react'),
              ReactDOM = require('react/react-dom-server');
-            ''',
-            jsx,
-            'ReactDOM.renderToStaticMarkup(react_hello, null);'
-        ])
-        assert result == '<h1>Hello, world!</h1>', res
+            """,
+                jsx,
+                "ReactDOM.renderToStaticMarkup(react_hello, null);",
+            ]
+        )
+        assert result == "<h1>Hello, world!</h1>", result
 
     def test_jsx_mixed(self):
-        code = '''
+        code = """
 var React = require('react/react'),
  ReactDOM = require('react/react-dom-server');
 ReactDOM.renderToStaticMarkup(<h1>Hello, world!</h1>, null);
-'''
+"""
         jsx = dukpy.jsx_compile(code)
         res = dukpy.evaljs(jsx)
-        assert res == '<h1>Hello, world!</h1>', res
+        assert res == "<h1>Hello, world!</h1>", res
 
     def test_react_binding(self):
-        code = '''
+        code = """
 var React = require('react/react'),
  ReactDOM = require('react/react-dom-server');
 
@@ -44,13 +46,13 @@ var HelloWorld = React.createClass({
 });
 
 ReactDOM.renderToStaticMarkup(<HelloWorld data={dukpy.data}/>, null);
-'''
+"""
         jsx = dukpy.jsx_compile(code)
-        res = dukpy.evaljs(jsx, data={'id': 1, 'name': "Alessandro"})
+        res = dukpy.evaljs(jsx, data={"id": 1, "name": "Alessandro"})
         assert res == '<div class="helloworld">Hello Alessandro</div>', res
 
     def test_jsx6(self):
-        code = '''
+        code = """
 import React from 'react/react';
 var ReactDOM = require('react/react-dom-server');
 
@@ -65,7 +67,7 @@ class HelloWorld extends React.Component {
 }
 
 ReactDOM.renderToStaticMarkup(<HelloWorld data={dukpy.data}/>, null);
-'''
+"""
         jsx = dukpy.jsx_compile(code)
-        res = dukpy.evaljs(jsx, data={'id': 1, 'name': "Alessandro"})
+        res = dukpy.evaljs(jsx, data={"id": 1, "name": "Alessandro"})
         assert res == '<div class="helloworld">Hello Alessandro</div>', res

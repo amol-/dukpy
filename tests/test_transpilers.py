@@ -1,95 +1,95 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import unittest
 
 import dukpy
-from diffreport import report_diff
 from dukpy.lessc import LessCompilerError
 
 
 class TestTranspilers(unittest.TestCase):
     def test_coffee(self):
-        ans = dukpy.coffee_compile('''
-    fill = (container, liquid = "coffee") ->
-        "Filling the #{container} with #{liquid}..."
-''')
-        assert ans == '''(function() {
-  var fill;
-
-  fill = function(container, liquid) {
-    if (liquid == null) {
-      liquid = "coffee";
-    }
-    return "Filling the " + container + " with " + liquid + "...";
-  };
-
-}).call(this);
-'''
+        ans = dukpy.coffee_compile("""
+fill = (container, liquid = "coffee") ->
+    "Filling the #{container} with #{liquid}..."
+@coffee_result = [fill("cup"), fill("kettle", "tea")]
+""")
+        assert dukpy.evaljs([ans, "coffee_result"]) == [
+            "Filling the cup with coffee...",
+            "Filling the kettle with tea...",
+        ]
 
     def test_babel(self):
-        ans = dukpy.babel_compile('''
-class Point {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    toString() {
-        return '(' + this.x + ', ' + this.y + ')';
-    }
+        ans = dukpy.babel_compile("""
+export function greet(name = "Ada") {
+    return `Hello ${name}`;
 }
-''')
-        assert '''var Point = function () {
-    function Point(x, y) {
-''' in ans['code'], ans['code']
+globalThis.babel_result = greet();
+""")
+        assert (
+            dukpy.evaljs(
+                [
+                    "var exports = {};",
+                    ans["code"],
+                    "exports.greet('Grace') + ' / ' + globalThis.babel_result",
+                ]
+            )
+            == "Hello Grace / Hello Ada"
+        )
 
     def test_typescript(self):
-        ans = dukpy.typescript_compile('''
+        ans = dukpy.typescript_compile("""
 class Greeter {
     constructor(public greeting: string) { }
     greet() {
         return "<h1>" + this.greeting + "</h1>";
     }
 };
+globalThis.typescript_result = new Greeter("Hello, world!").greet();
+""")
 
-var greeter = new Greeter("Hello, world!");
-''')
-
-        expected = """System.register([], function(exports_1) {
-    var Greeter, greeter;
-    return {
-        setters:[],
-        execute: function() {
-            var Greeter = (function () {
-                function Greeter(greeting) {
-                    this.greeting = greeting;
-                }
-                Greeter.prototype.greet = function () {
-                    return "<h1>" + this.greeting + "</h1>";
-                };
-                return Greeter;
-            })();
-            ;
-            var greeter = new Greeter("Hello, world!");
-        }
+        assert (
+            dukpy.evaljs(
+                [
+                    """
+var System = {
+    register: function(deps, factory) {
+        var module = factory(function(){});
+        module.execute();
     }
-});"""
-
-        assert expected in ans, report_diff(expected, ans)
+};
+""",
+                    ans,
+                    "globalThis.typescript_result",
+                ]
+            )
+            == "<h1>Hello, world!</h1>"
+        )
 
     def test_jsx(self):
-        ans = dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
+        ans = dukpy.jsx_compile("var react_hello = <h1>Hello, world!</h1>;")
+        interpreter = dukpy.JSInterpreter()
 
-        expected = """"use strict";
-
-var react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);"""
-
-        assert expected == ans, report_diff(expected, ans)
+        assert (
+            interpreter.evaljs(
+                [
+                    """
+var React = require('react/react'),
+    ReactDOM = require('react/react-dom-server');
+""",
+                    ans,
+                    "ReactDOM.renderToStaticMarkup(react_hello, null);",
+                ]
+            )
+            == "<h1>Hello, world!</h1>"
+        )
 
     def test_jsx6(self):
-        ans = dukpy.jsx_compile('''
-import Component from 'react';
+        ans = dukpy.jsx_compile("""
+import React from 'react/react';
+var ReactDOM = require('react/react-dom-server');
 
-class HelloWorld extends Component {
+class HelloWorld extends React.Component {
   render() {
     return (
       <div className="helloworld">
@@ -98,11 +98,16 @@ class HelloWorld extends Component {
     );
   }
 }
-''')
-        assert '_createClass(HelloWorld,' in ans, ans
+
+ReactDOM.renderToStaticMarkup(<HelloWorld data={dukpy.data}/>, null);
+""")
+        assert dukpy.evaljs(ans, data={"id": 1, "name": "Ada"}) == (
+            '<div class="helloworld">Hello Ada</div>'
+        )
 
     def test_less(self):
-        ans = dukpy.less_compile('''
+        ans = dukpy.less_compile(
+            """
 @import "files/colors.less";
 
 .box-shadow(@style, @c) when (iscolor(@c)) {
@@ -117,18 +122,22 @@ class HelloWorld extends Component {
   border-color: lighten(@green, 30%);
   div { .box-shadow(0 0 5px, 30%) }
 }
-''', options={'paths': [os.path.dirname(__file__)]})
+""",
+            options={"paths": [os.path.dirname(__file__)]},
+        )
 
-        expected = '''box {
-  color: #7cb029;
-  border-color: #c2e191;
-}
-.box div {
-  -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-}'''
-
-        assert expected in ans, report_diff(expected, ans)
+        assert re.search(r"\.box\s*\{[^}]*\bcolor\s*:\s*#7cb029\b", ans)
+        assert re.search(r"\.box\s*\{[^}]*\bborder-color\s*:\s*#c2e191\b", ans)
+        assert re.search(
+            r"\.box\s+div\s*\{[^}]*-webkit-box-shadow\s*:\s*"
+            r"0\s+0\s+5px\s+rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.3\s*\)",
+            ans,
+        )
+        assert re.search(
+            r"\.box\s+div\s*\{[^}]*(?<!-)box-shadow\s*:\s*"
+            r"0\s+0\s+5px\s+rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.3\s*\)",
+            ans,
+        )
 
     def test_less_errors(self):
         with self.assertRaises(LessCompilerError) as err:

@@ -1,0 +1,15 @@
+{
+  "archive_sha256": "c06c2122eed258444ad3d94470c6d645653b308e10002d3e43a774ba4d24953d",
+  "files": [
+    "quickjs-amalgam.c",
+    "quickjs-libc.h",
+    "quickjs.h"
+  ],
+  "patches": [],
+  "upstream": {
+    "name": "quickjs-ng",
+    "url": "https://github.com/quickjs-ng/quickjs/releases/download/v0.11.0/quickjs-amalgam.zip",
+    "version": "v0.11.0"
+  },
+  "workflow": "scripts/update_quickjs_vendor.py"
+}
