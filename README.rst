@@ -46,7 +46,7 @@ The TypeScript compiler can be used through the
     ...
     ... var greeter = new Greeter("Hello, world!");
     ... ''')
-    'var Greeter = (function () {\n    function Greeter(greeting) {\n        this.greeting = greeting;\n    }\n    Greeter.prototype.greet = function () {\n        return "<h1>" + this.greeting + "</h1>";\n    };\n    return Greeter;\n})();\n;\nvar greeter = new Greeter("Hello, world!");\n'
+    'var Greeter = /** @class */ (function () {\n    function Greeter(greeting) {\n        this.greeting = greeting;\n    }\n    Greeter.prototype.greet = function () {\n        return "<h1>" + this.greeting + "</h1>";\n    };\n    return Greeter;\n}());\n;\nvar greeter = new Greeter("Hello, world!");\n'
 
 Currently the compiler has built-in options and doesn't accept additional ones,
 
@@ -79,7 +79,7 @@ DukPy provides a built-in compiler from JSX to React, this is available as
 
     >>> import dukpy
     >>> dukpy.jsx_compile('var react_hello = <h1>Hello, world!</h1>;')
-    u'"use strict";\n\nvar react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);'
+    '"use strict";\n\nvar react_hello = React.createElement(\n  "h1",\n  null,\n  "Hello, world!"\n);'
 
 The DukPY based JSX compiler also provides a WebAssets (
 http://webassets.readthedocs.org/en/latest/ ) filter to automatically
@@ -157,15 +157,21 @@ JavaScript file entrypoint:
     {}
 
 ``evaljs`` always evaluates source text as a script. ``run`` reads a file and
-uses Node-like entrypoint classification: ``.mjs`` files are native ES modules,
-``.cjs`` files are CommonJS, and ``.js`` files follow the nearest
-``package.json`` ``type`` of ``module`` or ``commonjs``. Ambiguous ``.js``
-entrypoints and dependencies are probed by QuickJS by compiling the CommonJS
-wrapper first and falling back to native ES module compilation when that fails;
-DukPy does not scan source text for ``import``, ``export``, ``await``, comments,
-strings, or identifiers. Entrypoints use the same canonical module id as the
-loader; for files under a registered loader path, ``import.meta.url`` and
-CommonJS ``module.id`` may be relative to that path.
+classifies its entrypoint:
+
+- ``.mjs`` files are native ES modules.
+- ``.cjs`` files are CommonJS.
+- ``.js`` files follow the nearest ``package.json`` ``type`` of ``module`` or
+  ``commonjs``.
+
+A ``.js`` file without that package metadata is ambiguous. For both entrypoints
+and dependencies, DukPy asks QuickJS to compile the CommonJS wrapper first; if
+that fails, it runs the file as a native ES module. DukPy never scans source
+text for ``import``, ``export``, ``await``, comments, strings, or identifiers.
+
+Entrypoints use the loader's canonical module ID. For a file under a registered
+loader path, ``import.meta.url`` and CommonJS ``module.id`` may therefore be
+relative to that path.
 
 When ES modules import files classified as CommonJS, DukPy exposes a minimal
 synthetic namespace: ``default`` is ``module.exports``, and the only named
@@ -232,9 +238,9 @@ and multiple ``eval`` calls will share the same interpreter and global status:
     >>> import dukpy
     >>> interpreter = dukpy.JSInterpreter()
     >>> interpreter.evaljs("var o = {'value': 5}; o")
-    {u'value': 5}
+    {'value': 5}
     >>> interpreter.evaljs("o.value += 1; o")
-    {u'value': 6}
+    {'value': 6}
 
 Loading modules with require
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
