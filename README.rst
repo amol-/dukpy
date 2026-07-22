@@ -23,7 +23,6 @@ for package compatibility.
 
 It comes with a bunch of common transpilers built-in for convenience:
 
-    - *BabelJS*
     - *TypeScript*
     - *JSX*
     - *LESS*
@@ -70,55 +69,6 @@ in the browser, make sure to add
 https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.24/system.js
 dependency. As ``import`` statements are resolved using SystemJS.
 
-EcmaScript6 BabelJS Transpiler
-------------------------------
-
-To compile ES6 code to ES5 for everyday usage you can use
-``dukpy.babel_compile``:
-
-.. code:: python
-
-    >>> import dukpy
-    >>> dukpy.babel_compile('''
-    ... class Point {
-    ...     constructor(x, y) {
-    ...             this.x = x;
-    ...         this.y = y;
-    ...         }
-    ...         toString() {
-    ...             return '(' + this.x + ', ' + this.y + ')';
-    ...         }
-    ... }
-    ... ''')
-    '"use strict";\n\nvar _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };\n\nvar _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };\n\nvar Point = (function () {\n    function Point(x, y) {\n        _classCallCheck(this, Point);\n\n        this.x = x;\n        this.y = y;\n    }\n\n    _prototypeProperties(Point, null, {\n        toString: {\n            value: function toString() {\n                return "(" + this.x + ", " + this.y + ")";\n            },\n            writable: true,\n            configurable: true\n        }\n    });\n\n    return Point;\n})();\n'
-
-You  can pass `options`__ to the BabelJS compiler just as keywords on
-the call to ``babel_compile()``.
-
-__ http://babeljs.io/docs/usage/options/
-
-The DukPY based BabelJS compiler also provides a WebAssets (
-http://webassets.readthedocs.org/en/latest/ ) filter to automatically
-compile ES6 code in your assets pipeline.  You register this filter as
-``babeljs`` within WebAssets using:
-
-.. code:: python
-
-    from webassets.filter import register_filter
-    from dukpy.webassets import BabelJS
-
-    register_filter(BabelJS)
-
-Which makes the filter available with the ``babeljs`` name.
-Only supported filter option is currently `BABEL_MODULES_LOADER` with value
-``systemjs`` or ``umd`` to specify that compiled code should use SystemJS
-or UMD instead of CommonJS for modules.
-
-**NOTE:** When using the BabelJS compiler for code that needs to run
-in the browser, make sure to add
-https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.26.0/polyfill.min.js
-dependency.
-
 JSX to React Transpiling
 ------------------------
 
@@ -144,7 +94,8 @@ compile JSX+ES6 code in your assets pipeline.  You register this filter as
     register_filter(BabelJSX)
 
 Which makes the filter available with the ``babeljsx`` name.
-This filter supports the same options as the babel one.
+The ``BABEL_MODULES_LOADER`` option accepts ``systemjs`` or ``umd`` to compile
+modules for SystemJS or UMD instead of CommonJS.
 
 Less Transpiling
 ----------------

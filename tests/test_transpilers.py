@@ -8,23 +8,8 @@ from dukpy.lessc import LessCompilerError
 
 
 class TestTranspilers(unittest.TestCase):
-    def test_babel(self):
-        ans = dukpy.babel_compile("""
-export function greet(name = "Ada") {
-    return `Hello ${name}`;
-}
-globalThis.babel_result = greet();
-""")
-        assert (
-            dukpy.evaljs(
-                [
-                    "var exports = {};",
-                    ans["code"],
-                    "exports.greet('Grace') + ' / ' + globalThis.babel_result",
-                ]
-            )
-            == "Hello Grace / Hello Ada"
-        )
+    def test_generic_babel_compiler_is_not_public(self):
+        assert not hasattr(dukpy, "babel_compile")
 
     def test_typescript(self):
         ans = dukpy.typescript_compile("""

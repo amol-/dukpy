@@ -1,18 +1,14 @@
-import os
-from .evaljs import evaljs
+import os as _os
 
-BABEL_COMPILER = os.path.join(
-    os.path.dirname(__file__), "jsmodules", "babel-6.26.0.min.js"
-)
+from .evaljs import evaljs as _evaljs
+
+__all__ = ("jsx_compile",)
 
 
-def babel_compile(source, **kwargs):
-    """Compiles the given ``source`` from ES6 to ES5 using Babeljs"""
-    presets = kwargs.get("presets")
-    if not presets:
-        kwargs["presets"] = ["es2015"]
-    with open(BABEL_COMPILER, "rb") as babel_js:
-        return evaljs(
+def jsx_compile(source, **kwargs):
+    kwargs["presets"] = ["es2015", "react"]
+    with open(_BABEL_COMPILER, "rb") as babel_js:
+        return _evaljs(
             (
                 babel_js.read().decode("utf-8"),
                 "var bres, res;"
@@ -21,9 +17,9 @@ def babel_compile(source, **kwargs):
             ),
             es6code=source,
             babel_options=kwargs,
-        )
+        )["code"]
 
 
-def jsx_compile(source, **kwargs):
-    kwargs["presets"] = ["es2015", "react"]
-    return babel_compile(source, **kwargs)["code"]
+_BABEL_COMPILER = _os.path.join(
+    _os.path.dirname(__file__), "jsmodules", "babel-6.26.0.min.js"
+)

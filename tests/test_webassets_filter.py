@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 import re
 
 import dukpy
-from dukpy.webassets import BabelJS, TypeScript, CompileLess, BabelJSX
+import dukpy.webassets
+from dukpy.webassets import TypeScript, CompileLess, BabelJSX
 from webassets.test import TempEnvironmentHelper
 
 
@@ -26,34 +27,14 @@ class PyTestTempEnvironmentHelper(TempEnvironmentHelper):
 
 
 class TestAssetsFilters(PyTestTempEnvironmentHelper):
+    def test_generic_babel_filter_is_not_public(self):
+        assert not hasattr(dukpy.webassets, "BabelJS")
+
     @classmethod
     def setup_class(cls):
         from webassets.filter import register_filter
 
-        register_filter(BabelJS)
         register_filter(TypeScript)
-
-    def test_babeljs_filter(self):
-        ES6CODE = """
-export function greet(name = "Ada") {
-    return `Hello ${name}`;
-}
-globalThis.babel_result = greet();
-"""
-        self.create_files({"in": ES6CODE})
-        self.mkbundle("in", filters="babeljs", output="out").build()
-        ans = self.get("out")
-
-        assert (
-            dukpy.evaljs(
-                [
-                    "var exports = {};",
-                    ans,
-                    "exports.greet('Grace') + ' / ' + globalThis.babel_result",
-                ]
-            )
-            == "Hello Grace / Hello Ada"
-        )
 
     def test_typescript_filter(self):
         typeScript_source = """
@@ -190,3 +171,27 @@ var System = {
             "deps": ["react/react"],
             "html": '<div class="helloworld">Hello Ada</div>',
         }
+
+    def test_jsx_umd_option(self):
+        self.create_files({"in": self.JSX_CODE})
+        self.mkbundle(
+            "in",
+            filters="babeljsx",
+            output="out",
+            config={"babel_modules_loader": "umd"},
+        ).build()
+        interpreter = dukpy.JSInterpreter()
+
+        assert (
+            interpreter.evaljs(
+                [
+                    """
+var react = require('react/react'),
+    reactDomServer = require('react/react-dom-server');
+""",
+                    self.get("out"),
+                    "globalThis.jsx_filter_result",
+                ]
+            )
+            == '<div class="helloworld">Hello Ada</div>'
+        )

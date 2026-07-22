@@ -2,122 +2,63 @@
 
 ## New features and capabilities
 
-- JavaScript engine migrated from Duktape to QuickJS-NG v0.11.0.
-  - Better modern JavaScript syntax support.
-  - Native Promise/job-queue support.
-
-- New public file runner API:
-  - `dukpy.run(path, **kwargs)`
-  - `JSInterpreter.run(path, **kwargs)`
-  - The `dukpy` CLI now uses this path-based runner.
-
-- Native ES module support for file entrypoints.
-  - `.mjs` runs as native ESM.
-  - `.cjs` runs as CommonJS.
-  - `.js` follows nearest `package.json` `"type": "module"` / `"commonjs"`.
-  - Package-less ambiguous `.js` files are probed instead of source-scanned.
-
-- ESM features now supported through `run()`:
-  - static `import`
-  - `export`
-  - `import.meta.url`
-  - `import.meta.main`
-  - top-level `await`
-
-- CommonJS runtime rewritten for QuickJS.
-  - Supports `require`, `module`, `exports`.
-  - Supports `__filename` and `__dirname`.
-  - Has a module cache shared between global `require()` and ESM/CommonJS interop.
-  - Failed CommonJS modules are removed from cache so they can be retried.
-
-- ESM importing CommonJS is supported.
-  - Default import maps to `module.exports`.
-  - Namespace exposes: `default`, `module`, `exports`, `require`.
-  - No named-export inference from CommonJS source.
-
-- Node-like compatibility shims still shipped and tested:
-  - `fs`
-  - `path`
-  - `url`
-  - `querystring`
-  - `punycode`
-
-- Promise/microtask behavior is now handled.
-  - Promise microtasks are drained before result serialization.
-  - Promise failures during evaluation/serialization propagate as `JSRuntimeError`.
-
-- Improved Python callback bridge.
-  - Preserves argument order and JSON types.
-  - Supports Unicode function names and Unicode/emoji values.
-  - Python `None` callback returns become JavaScript `undefined`.
-  - Missing Python callbacks become catchable JS `ReferenceError`.
-  - Python exceptions become catchable JS `InternalError`.
-
-- Result conversion now follows `JSON.stringify` more closely.
-  - `null`, `undefined`, `NaN`, `Infinity`, `-Infinity` map to Python `None`.
-  - JSON conversion failures like circular references and BigInt produce runtime errors.
-
-- Improved runtime safety.
-  - Stack exhaustion and oversized allocations are reported as runtime errors.
-  - Python signal exceptions propagate.
-  - Blocking `Atomics.wait` is disabled.
-
-- Installer hardening.
-  - npm registry access now uses HTTPS.
-  - Tarball URLs must be HTTPS.
-  - Rejects unsafe tar paths, path traversal, multiple archive roots, unsupported tar entries, and symlink destination escapes.
-  - Better errors for missing metadata, missing versions, missing tarball URLs.
-
-- Packaging modernization.
-  - Moved project metadata to `pyproject.toml`.
-  - Declares `requires-python = ">=3.9"`.
-  - Adds Ruff/pre-commit lint setup.
-  - Builds sdist with `python -m build`.
+- JavaScript engine migrated from Duktape to QuickJS-NG v0.11.0, with modern
+  JavaScript syntax and native Promise/job-queue support.
+- Added `dukpy.run(path, **kwargs)` and `JSInterpreter.run(path, **kwargs)`;
+  the `dukpy` CLI uses this file runner. `run()` supports native ESM static
+  `import`/`export`, `import.meta.url`, `import.meta.main`, and top-level
+  `await`.
+- File entrypoints use Node-like classification: `.mjs` is ESM, `.cjs` is
+  CommonJS, and `.js` follows the nearest `package.json` `"type"` of `module`
+  or `commonjs`. Package-less ambiguous `.js` files are probed by compiling the
+  CommonJS wrapper first, then native ESM; source text is not scanned.
+- The QuickJS CommonJS runtime supports `require`, `module`, `exports`,
+  `__filename`, and `__dirname`. Its cache is shared with ESM/CommonJS interop,
+  and failed modules are removed so they can be retried.
+- ESM can import CommonJS: the default export is `module.exports`; the only
+  named exports are `module`, `exports`, and `require`. Named exports are not
+  inferred from CommonJS source.
+- Node-like `fs`, `path`, `url`, `querystring`, and `punycode` shims remain
+  available.
+- Promise microtasks drain before result serialization; Promise failures during
+  evaluation or serialization raise `JSRuntimeError`.
+- Python callbacks preserve argument order and JSON types, support Unicode names
+  and Unicode/emoji values, map `None` returns to JavaScript `undefined`, and
+  turn missing callbacks and Python exceptions into catchable `ReferenceError`
+  and `InternalError`, respectively.
+- Result conversion more closely follows `JSON.stringify`: `null`, `undefined`,
+  `NaN`, `Infinity`, and `-Infinity` map to Python `None`; circular references
+  and BigInt conversion failures raise runtime errors.
+- Stack exhaustion and oversized allocations raise runtime errors, Python signal
+  exceptions propagate, and blocking `Atomics.wait` is disabled.
+- The npm installer uses HTTPS for registry and tarball URLs; rejects unsafe tar
+  paths, path traversal, multiple roots, unsupported entries, and symlink
+  destination escapes; and reports missing metadata, versions, and tarball URLs
+  more clearly.
+- Bundled TypeScript was upgraded to 5.7.3.
 
 ## No longer available and behavior changes
 
-- Duktape-specific behavior is gone.
-  - No Duktape engine.
-  - Code relying on the JS global `Duktape` or `Duktape.modSearch` will break.
-  - Module loading is now DukPy’s QuickJS/CommonJS shim instead of Duktape’s module system.
-
-- Python versions below 3.9 are no longer supported.
-  - 0.6.0 declares Python `>=3.9`.
-  - Old Python 2 compatibility code is gone.
-
-- `dukpy.run` changed shape.
-  - Old `dukpy/run.py` module was removed.
-  - New public API is `dukpy.run(...)` function.
-  - Code like `from dukpy.run import main` will break.
-  - The console command `dukpy` still exists, but now points to `dukpy.cli:main`.
-
-- `evaljs()` remains script-only.
-  - It does not auto-detect ESM syntax.
-  - Static `import` / `export` should be run via `dukpy.run()` file entrypoints, not raw `evaljs()` source text.
-
-- CommonJS module IDs may differ.
-  - New loader uses canonical file-like module IDs with extensions and forward slashes.
-  - Code depending on old Duktape/loader `module.id` or `require.id` exact strings may see changed values.
-
-- `require()` no longer runs ES modules as CommonJS.
-  - `require('x.mjs')` errors.
-  - `require()` of `.js` files classified as ESM errors.
-  - This is intentional; use ESM `import` / `dukpy.run()` for modules.
-
-- CommonJS named exports are not inferred.
-  - `import { name } from './commonjs.js'` is not supported unless the synthetic namespace has that name.
-  - Use default import for CommonJS exports.
-
-- JavaScript error messages/stacks changed.
-  - Errors now use QuickJS wording and stack formatting, not Duktape wording.
-  - Tests expecting exact old Duktape messages will need updates.
-
-- Result serialization changed for some edge values.
-  - Top-level functions/Symbols now raise `Invalid Result Value`.
-  - `undefined`, `NaN`, and infinities now map to `None`.
-  - Some values that previously looked like `{}` or Duktape-specific output may differ.
-
-- Installer is stricter.
-  - HTTP registry/tarball URLs are rejected.
-  - Tarballs with symlinks, path traversal, multiple roots, or unsupported entries are rejected.
-  - Installing through symlinked destinations is rejected.
+- Generic Babel support was removed: `dukpy.babel_compile`, `dukpy.webassets.BabelJS`, and the `babeljs` WebAssets filter are unavailable; bundled Babel remains only for JSX transpilation.
+- CoffeeScript support, including `dukpy.coffee_compile`, was removed.
+- Duktape and its `Duktape` global, `Duktape.modSearch`, module system, error
+  wording, and stack formatting are gone; code relying on them must use DukPy's
+  QuickJS/CommonJS behavior and update exact-message expectations.
+- Python versions below 3.9 are unsupported; 0.6.0 requires Python `>=3.9`,
+  and old Python 2 compatibility code is gone.
+- The old `dukpy/run.py` module is removed. Use `dukpy.run(...)`; code importing
+  `main` from `dukpy.run` breaks. The `dukpy` console command remains and now
+  targets `dukpy.cli:main`.
+- `evaljs()` remains script-only and does not auto-detect ESM syntax; run static
+  `import`/`export` through `dukpy.run()` file entrypoints.
+- CommonJS module IDs now use canonical file-like IDs with extensions and
+  forward slashes, so exact old `module.id` or `require.id` strings may differ.
+- `require('x.mjs')` and `require()` of `.js` files classified as ESM fail; use
+  ESM `import`/`dukpy.run()`. CommonJS named imports are unsupported unless they
+  are `module`, `exports`, or `require`; use the default import for its API.
+- Top-level functions and Symbols now raise `Invalid Result Value`; `undefined`,
+  `NaN`, and infinities map to `None`, and Duktape-specific or formerly `{}`
+  results may differ.
+- The installer rejects HTTP registry or tarball URLs, tarballs with symlinks,
+  path traversal, multiple roots, or unsupported entries, and symlinked
+  destinations.
