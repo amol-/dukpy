@@ -10,10 +10,10 @@ dukpy
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
    :target: https://pypi.org/p/dukpy
 
-.. raw:: html
-
-    <img align="left" width="100px" src="dukpy_logo.png" alt="DukPy logo">
-
+.. image:: https://raw.githubusercontent.com/amol-/dukpy/0.6.0/dukpy_logo.png
+   :alt: DukPy logo
+   :width: 100px
+   :align: left
 
 DukPy is a simple JavaScript interpreter for Python **without any external
 runtime dependency**.
@@ -48,7 +48,7 @@ The TypeScript compiler can be used through the
     ... ''')
     'var Greeter = /** @class */ (function () {\n    function Greeter(greeting) {\n        this.greeting = greeting;\n    }\n    Greeter.prototype.greet = function () {\n        return "<h1>" + this.greeting + "</h1>";\n    };\n    return Greeter;\n}());\n;\nvar greeter = new Greeter("Hello, world!");\n'
 
-Currently the compiler has built-in options and doesn't accept additional ones,
+Currently the compiler has built-in options and doesn't accept additional ones.
 
 The DukPY based TypeScript compiler also provides a WebAssets (
 http://webassets.readthedocs.org/en/latest/ ) filter to automatically
@@ -213,8 +213,6 @@ Multiple script can be passed in a list or tuple:
 
 This is useful when your code requires dependencies to work,
 as you can load the dependency and then your code.
-
-other transpilers in DukPy itself:
 
 Using a persistent JavaScript Interpreter
 -----------------------------------------
