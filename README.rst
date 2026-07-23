@@ -10,7 +10,7 @@ dukpy
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
    :target: https://pypi.org/p/dukpy
 
-.. image:: https://raw.githubusercontent.com/amol-/dukpy/0.6.0/dukpy_logo.png
+.. image:: https://raw.githubusercontent.com/amol-/dukpy/master/dukpy_logo.png
    :alt: DukPy logo
    :width: 100px
    :align: left
