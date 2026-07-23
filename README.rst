@@ -1,6 +1,11 @@
 dukpy
 =====
 
+.. image:: https://raw.githubusercontent.com/amol-/dukpy/master/dukpy_logo.png
+   :alt: DukPy logo
+   :width: 100px
+   :align: left
+
 .. image:: https://github.com/amol-/dukpy/actions/workflows/run-tests.yml/badge.svg
     :target: https://github.com/amol-/dukpy/actions/workflows/run-tests.yml
 
@@ -9,11 +14,6 @@ dukpy
 
 .. image:: https://img.shields.io/pypi/v/dukpy.svg
    :target: https://pypi.org/p/dukpy
-
-.. image:: https://raw.githubusercontent.com/amol-/dukpy/master/dukpy_logo.png
-   :alt: DukPy logo
-   :width: 100px
-   :align: left
 
 DukPy is a simple JavaScript interpreter for Python **without any external
 runtime dependency**.
